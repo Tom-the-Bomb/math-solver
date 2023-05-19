@@ -1,0 +1,6 @@
+[project]
+name = "math-solver"
+authors = ["Tom-the-Bomb"]
+version = "0.1.0"
+requires-python = ">=3.10"
+
