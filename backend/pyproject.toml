@@ -4,3 +4,6 @@ authors = ["Tom-the-Bomb"]
 version = "0.1.0"
 requires-python = ">=3.10"
 
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
