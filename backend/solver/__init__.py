@@ -1,3 +1,3 @@
 from .solve import Solver
 
-Solver().evaluate("x+1")
+print(Solver().solve("1=2*sin(x)+1"))

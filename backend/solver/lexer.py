@@ -12,11 +12,20 @@ class LexerGenerator(Generator):
 
         self.add_basic()
         self.add_operations()
+        self.add_relational()
         self.add_groupers()
+
+    def add_relational(self, /, *, inequality: bool = True) -> None:
+        self.add('EQ', '=')
+        if inequality:
+            self.add('LT', '<')
+            self.add('LE', '<=')
+            self.add('GT', '>')
+            self.add('GE', '>=')
 
     def add_basic(self, /) -> None:
         self.add('NUMBER', r'([0-9]+(\.[0-9]*)?|\.[0-9]+)')
-        self.add('NAME', r'[a-zA-Z_][a-zA-Z0-9_]*')
+        self.add('IDENT', r'[a-zA-Z_][a-zA-Z0-9_]*')
 
     def add_operations(self) -> None:
         self.add('ADD', r'\+')
@@ -24,7 +33,6 @@ class LexerGenerator(Generator):
         self.add('MUL', r'\*')
         self.add('DIV', '/')
         self.add('POW', r'\^')
-        self.add('SUBSC', '_')
         self.add('FAC', '!')
         self.add('MOD', '%')
 
