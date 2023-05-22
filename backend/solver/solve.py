@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, TypeAlias
 
-from sympy import Eq, solveset as solve_eq
+from sympy import Eq, solve as solve_eq
 
 from .parser import Parser
 

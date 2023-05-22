@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from sympy.core.relational import Relational
     from sympy.core.numbers import NumberSymbol
 
-    Expr: TypeAlias = AssocOp | Decimal
+    Expr: TypeAlias = AssocOp | Decimal | int
     Equation: TypeAlias = Relational | bool
 
 __all__ = (
@@ -66,9 +66,9 @@ class Function(Ast):
         return self.func(self.argument.eval())
 
 class Constant(Ast):
-    value: NumberSymbol | Decimal
+    value: NumberSymbol | Decimal | int
 
-    def eval(self, /) -> NumberSymbol | Decimal:
+    def eval(self, /) -> NumberSymbol | Decimal | int:
         return self.value
 
 class Variable(Ast):
@@ -76,8 +76,8 @@ class Variable(Ast):
         return Symbol(self.value)
 
 class Number(Ast):
-    def eval(self, /) -> Decimal:
-        return Decimal(self.value)
+    def eval(self, /) -> Decimal | int:
+        return int(self.value) if float(self.value).is_integer() else Decimal(self.value)
 
 class BinaryOp(Ast):
     def __init__(self, left: Ast, right: Ast, /):

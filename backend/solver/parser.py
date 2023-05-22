@@ -35,7 +35,7 @@ class Parser:
         self, /,
         *,
         functions: Optional[dict[str, Callable[[Any], Any]]] = None,
-        constants: Optional[dict[str, Decimal | NumberSymbol]] = None,
+        constants: Optional[dict[str, Decimal | NumberSymbol | int]] = None,
     ) -> None:
         self.functions = functions or dict(inspect.getmembers(func_mod))
         self.constants = constants or {
