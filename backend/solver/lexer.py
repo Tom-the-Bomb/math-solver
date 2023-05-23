@@ -33,6 +33,7 @@ class LexerGenerator(Generator):
         self.add('MUL', r'\*')
         self.add('DIV', '/')
         self.add('POW', r'\^')
+        self.add('SUBSCRIPT', '_')
         self.add('FAC', '!')
         self.add('MOD', '%')
 

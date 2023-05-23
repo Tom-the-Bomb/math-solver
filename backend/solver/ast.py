@@ -58,15 +58,16 @@ class Ast(ABC, BaseBox):
         raise NotImplementedError
 
 class Function(Ast):
-    def __init__(self, func: Callable[[Any], Any], argument: Ast, /) -> None:
+    def __init__(self, func: Callable[[Any], Any], /, *arguments: Ast) -> None:
         self.func = func
-        self.argument = argument
+        self.arguments = arguments
 
     def eval(self, /) -> Symbol:
-        return self.func(self.argument.eval())
+        return self.func(*[arg.eval() for arg in self.arguments])
 
 class Constant(Ast):
-    value: NumberSymbol | Decimal | int
+    def __init__(self, value: NumberSymbol | Decimal | int, /) -> None:
+        self.value = value
 
     def eval(self, /) -> NumberSymbol | Decimal | int:
         return self.value

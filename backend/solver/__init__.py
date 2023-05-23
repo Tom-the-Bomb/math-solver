@@ -1,6 +1,3 @@
 from .solve import Solver
-from sympy import pprint
 
-pprint(Solver().solve("x^2=-1"))
-pprint(Solver().solve("x^2=1"))
-pprint(Solver().solve("1=2*sin(x)+1"))
+print(Solver("3x^2 + 4x + 5pi*e").parsed_equation)

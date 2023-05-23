@@ -1,8 +1,9 @@
 from __future__ import annotations
-from decimal import Decimal
 
-from typing import Optional, Callable, Any, TYPE_CHECKING
+from typing import NoReturn, Optional, Callable, Any, TYPE_CHECKING
+from decimal import Decimal
 import inspect
+import warnings
 
 from rply import Token, ParserGenerator
 from sympy import (
@@ -14,6 +15,9 @@ from .lexer import LexerGenerator
 from .ast import *
 
 if TYPE_CHECKING:
+    from rply.lexer import Lexer
+    from rply.parser import LRParser
+
     from sympy import NumberSymbol
 
 class Parser:
@@ -47,11 +51,19 @@ class Parser:
             'inf': oo,
         }
 
-    def parse(self, equation: str) -> Conditional:
-        lexer = self.lg.build()
-        parser = self.pg.build()
+        self.variables: list[Variable] = []
 
-        return parser.parse(lexer.lex(equation), state=self) # type: ignore
+        self._lexer: Lexer = self.lg.build()
+        self._parser: LRParser = self.pg.build()
+
+    def parse(self, equation: str) -> Conditional:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            
+            return self._parser.parse(
+                self._lexer.lex(equation),
+                state=self
+            ) # type: ignore
 
     @staticmethod
     @pg.production('equation : expr')
@@ -62,7 +74,8 @@ class Parser:
     @pg.production('equation : expr GE expr')
     def equation(_, p: list[Token], /) -> BinaryOp:
         if len(p) == 1:
-            return Eq(p[0], Number('0')) # type: ignore
+            assert isinstance(p[0], Ast)
+            return Eq(p[0], Number('0'))
 
         return {
             'EQ': Eq,
@@ -81,8 +94,8 @@ class Parser:
     @pg.production('expr : LPAREN expr RPAREN')
     @pg.production('expr : LBRACK expr RBRACK')
     @pg.production('expr : LBRACE expr RBRACE')
-    def paren(_, p: list[Token], /) -> Ast:
-        return p[1] # type: ignore
+    def paren(_, p: list[Ast], /) -> Ast:
+        return p[1]
 
     @staticmethod
     @pg.production('expr : expr FAC')
@@ -105,31 +118,7 @@ class Parser:
             'MOD': Mod,
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
-
-    @staticmethod
-    @pg.production('expr : IDENT')
-    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul:
-        ident = p[0].getstr()
-
-        if x := state.constants.get(ident):
-            return Constant(ident)
-        if len(ident) == 1:
-            return Variable(ident)
-
-        variables = map(Variable, ident)
-        expr = Mul(next(variables), next(variables))
-        for x in variables:
-            expr = Mul(expr, x)
-        return expr
-
-    @staticmethod
-    @pg.production('expr : IDENT LPAREN expr RPAREN')
-    def fx(state: Parser, p: list[Token], /) -> Function | Mul:
-        if f := state.functions.get(p[0].getstr()):
-            return Function(f, p[2]) # type: ignore
-
-        return Mul(Variable(p[0].getstr()), p[2]) # type: ignore
-
+    
     @staticmethod
     @pg.production("expr : ADD expr", precedence='UNOP')
     @pg.production("expr : SUB expr", precedence='UNOP')
@@ -140,6 +129,52 @@ class Parser:
         }[p[0].gettokentype()](p[1])
 
     @staticmethod
-    @pg.production('expr : expr expr', precedence='MUL')
-    def implcit_mul(_, p: list[Ast], /) -> Any:
-        return Mul(p[0], p[1])
+    @pg.production('variable : IDENT')
+    @pg.production('variable : IDENT SUBSCRIPT IDENT')
+    @pg.production('variable : IDENT SUBSCRIPT NUMBER')
+    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul:
+        ident = p[0].getstr()
+        if len(p) == 3:
+            ident += f'_{p[-1].getstr()}'
+
+        if x := state.constants.get(ident):
+            return Constant(x)
+        if len(ident) == 1:
+            var = Variable(ident)
+            state.variables.append(var)
+            return var
+
+        variables = map(Variable, ident)
+        expr = Mul(next(variables), next(variables))
+        for x in variables:
+            if con := state.constants.get(ident):
+                x = Constant(con)
+            else:
+                state.variables.append(x)
+            expr = Mul(expr, x)
+        return expr
+    
+    @staticmethod
+    @pg.production('expr : variable')
+    def var_expr(_, p: list[Ast]) -> Ast:
+        return p[0]
+
+    @staticmethod
+    @pg.production('expr : IDENT LPAREN expr RPAREN')
+    @pg.production('expr : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
+    def fx(state: Parser, p: list[Any], /) -> Function | Mul:
+        f_name = p[0].getstr()
+        if f := state.functions.get(f_name):
+            return Function(f, p[1], p[-2]) if len(p) == 6 else Function(f, p[-2])
+
+        return Mul(Variable(f_name), p[-2])
+
+    @staticmethod
+    @pg.production('expr : NUMBER variable', precedence='MUL')
+    def implcit_mul(_, p: list[Any], /) -> Any:
+        return Mul(Number(p[0].getstr()), p[1])
+    
+    @staticmethod
+    @pg.error
+    def error_handler(token: Token) -> NoReturn:
+        raise ValueError(f'Ran into a {token.gettokentype()} where it wasn\'t expected')
