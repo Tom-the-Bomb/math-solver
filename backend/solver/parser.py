@@ -6,6 +6,7 @@ import inspect
 import warnings
 
 from rply import Token, ParserGenerator
+from rply.lexer import SourcePosition, LexingError
 from sympy import (
     E, I, pi, GoldenRatio, oo,
     functions as func_mod
@@ -59,11 +60,15 @@ class Parser:
     def parse(self, equation: str) -> Conditional:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-            
-            return self._parser.parse(
-                self._lexer.lex(equation),
-                state=self
-            ) # type: ignore
+
+            try:
+                return self._parser.parse(
+                    self._lexer.lex(equation),
+                    state=self
+                ) # type: ignore
+            except LexingError as e:
+                pos: SourcePosition = e.getsourcepos()
+                raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
 
     @staticmethod
     @pg.production('equation : expr')
@@ -92,7 +97,6 @@ class Parser:
 
     @staticmethod
     @pg.production('expr : LPAREN expr RPAREN')
-    @pg.production('expr : LBRACK expr RBRACK')
     @pg.production('expr : LBRACE expr RBRACE')
     def paren(_, p: list[Ast], /) -> Ast:
         return p[1]
@@ -118,7 +122,7 @@ class Parser:
             'MOD': Mod,
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
-    
+
     @staticmethod
     @pg.production("expr : ADD expr", precedence='UNOP')
     @pg.production("expr : SUB expr", precedence='UNOP')
@@ -153,15 +157,16 @@ class Parser:
                 state.variables.append(x)
             expr = Mul(expr, x)
         return expr
-    
+
     @staticmethod
     @pg.production('expr : variable')
+    @pg.production('expr : function')
     def var_expr(_, p: list[Ast]) -> Ast:
         return p[0]
 
     @staticmethod
-    @pg.production('expr : IDENT LPAREN expr RPAREN')
-    @pg.production('expr : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
+    @pg.production('function : IDENT LPAREN expr RPAREN')
+    @pg.production('function : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
     def fx(state: Parser, p: list[Any], /) -> Function | Mul:
         f_name = p[0].getstr()
         if f := state.functions.get(f_name):
@@ -171,10 +176,31 @@ class Parser:
 
     @staticmethod
     @pg.production('expr : NUMBER variable', precedence='MUL')
-    def implcit_mul(_, p: list[Any], /) -> Any:
+    @pg.production('expr : NUMBER function', precedence='MUL')
+    def ident_mul(_, p: list[Any], /) -> Any:
         return Mul(Number(p[0].getstr()), p[1])
-    
+
+    @pg.production('expr : NUMBER LPAREN expr RPAREN', precedence='MUL')
+    @pg.production('expr : variable LPAREN expr RPAREN', precedence='MUL')
+    @pg.production('expr : function LPAREN expr RPAREN', precedence='MUL')
+    @pg.production('expr : LPAREN expr RPAREN LPAREN expr RPAREN', precedence='MUL')
+    def implicit_mul(_, p: list[Token | Ast], /) -> Any:
+        if isinstance(p[0], Token):
+            if len(p) == 6:
+                assert isinstance(p[1], Ast)
+                left = p[1]
+            else:
+                left = Number(p[0].getstr())
+        else:
+            left = p[0]
+
+        assert isinstance(p[-2], Ast)
+        return Mul(left, p[-2])
+
     @staticmethod
     @pg.error
-    def error_handler(token: Token) -> NoReturn:
-        raise ValueError(f'Ran into a {token.gettokentype()} where it wasn\'t expected')
+    def error_handler(_, token: Token) -> NoReturn:
+        pos: SourcePosition = token.getsourcepos() # type: ignore
+        raise ValueError(
+            f"Encountered a {token.gettokentype()}: '{token.getstr()}' @ {pos.lineno}:{pos.colno} where it was not expected"
+        )

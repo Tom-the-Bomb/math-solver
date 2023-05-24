@@ -40,16 +40,11 @@ class LexerGenerator(Generator):
     def add_groupers(
         self, /,
         *,
-        round: bool = True,
-        square: bool = True,
         brace: bool = True,
     ) -> None:
         if round:
-            self.add('LPAREN', r'\(')
-            self.add('RPAREN', r'\)')
-        if square:
-            self.add('LBRACK', r'\[')
-            self.add('RBRACK', r'\]')
+            self.add('LPAREN', r'\(|\[')
+            self.add('RPAREN', r'\)|\]')
         if brace:
             self.add('LBRACE', r'\{')
             self.add('RBRACE', r'\}')
