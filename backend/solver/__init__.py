@@ -1,3 +1,3 @@
 from .solve import Solver
 
-print(Solver("1[1][2]").parsed_equation)
+print(Solver("3x^2 + 1").parsed_equation)

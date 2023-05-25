@@ -41,6 +41,7 @@ class Parser:
         *,
         functions: Optional[dict[str, Callable[[Any], Any]]] = None,
         constants: Optional[dict[str, Decimal | NumberSymbol | int]] = None,
+        variables: Optional[dict[str, Decimal]] = None,
     ) -> None:
         self.functions = functions or dict(inspect.getmembers(func_mod))
         self.constants = constants or {
@@ -51,6 +52,7 @@ class Parser:
             'phi': GoldenRatio,
             'inf': oo,
         }
+        self.constants.update(variables or {})
 
         self.variables: list[Variable] = []
 
@@ -89,15 +91,20 @@ class Parser:
             'GT': Gt,
             'GE': Ge,
         }[p[1].gettokentype()](p[0], p[2])
+    
+    @staticmethod
+    @pg.production('expr : group')
+    def group_expr(_, p: list[Ast]) -> Ast:
+        return p[0]
 
     @staticmethod
-    @pg.production('expr : NUMBER')
+    @pg.production('group : NUMBER')
     def number(_, p: list[Token], /) -> Number:
         return Number(p[0].getstr())
 
     @staticmethod
-    @pg.production('expr : LPAREN expr RPAREN')
-    @pg.production('expr : LBRACE expr RBRACE')
+    @pg.production('group : LBRACK expr RBRACK')
+    @pg.production('group : LBRACE expr RBRACE')
     def paren(_, p: list[Ast], /) -> Ast:
         return p[1]
 
@@ -112,7 +119,7 @@ class Parser:
     @pg.production('expr : expr MUL expr')
     @pg.production('expr : expr DIV expr')
     @pg.production('expr : expr MOD expr')
-    @pg.production('expr : expr POW expr')
+    @pg.production('group : expr POW expr')
     def binop(_, p: list[Token], /) -> BinaryOp:
         return {
             'ADD': Add,
@@ -159,14 +166,14 @@ class Parser:
         return expr
 
     @staticmethod
-    @pg.production('expr : variable')
-    @pg.production('expr : function')
-    def var_expr(_, p: list[Ast]) -> Ast:
+    @pg.production('group : variable')
+    @pg.production('group : function')
+    def var_fn(_, p: list[Ast]) -> Ast:
         return p[0]
 
     @staticmethod
-    @pg.production('function : IDENT LPAREN expr RPAREN')
-    @pg.production('function : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
+    @pg.production('function : IDENT LBRACK expr RBRACK')
+    @pg.production('function : IDENT SUBSCRIPT NUMBER LBRACK expr RBRACK')
     def fx(state: Parser, p: list[Any], /) -> Function | Mul:
         f_name = p[0].getstr()
         if f := state.functions.get(f_name):
@@ -174,33 +181,14 @@ class Parser:
 
         return Mul(Variable(f_name), p[-2])
 
-    @staticmethod
-    @pg.production('expr : NUMBER variable', precedence='MUL')
-    @pg.production('expr : NUMBER function', precedence='MUL')
-    def ident_mul(_, p: list[Any], /) -> Any:
-        return Mul(Number(p[0].getstr()), p[1])
-
-    @pg.production('expr : NUMBER LPAREN expr RPAREN', precedence='MUL')
-    @pg.production('expr : variable LPAREN expr RPAREN', precedence='MUL')
-    @pg.production('expr : function LPAREN expr RPAREN', precedence='MUL')
-    @pg.production('expr : LPAREN expr RPAREN LPAREN expr RPAREN', precedence='MUL')
-    def implicit_mul(_, p: list[Token | Ast], /) -> Any:
-        if isinstance(p[0], Token):
-            if len(p) == 6:
-                assert isinstance(p[1], Ast)
-                left = p[1]
-            else:
-                left = Number(p[0].getstr())
-        else:
-            left = p[0]
-
-        assert isinstance(p[-2], Ast)
-        return Mul(left, p[-2])
+    @pg.production('group : group group', precedence='MUL')
+    def implicit_mul(_, p: list[Ast], /) -> Mul:
+        return Mul(p[0], p[1])
 
     @staticmethod
     @pg.error
     def error_handler(_, token: Token) -> NoReturn:
-        pos: SourcePosition = token.getsourcepos() # type: ignore
+        pos: Optional[SourcePosition] = token.getsourcepos()
         raise ValueError(
-            f"Encountered a {token.gettokentype()}: '{token.getstr()}' @ {pos.lineno}:{pos.colno} where it was not expected"
+            f"Encountered a {token.gettokentype()}: '{token.getstr()}' @ {pos.lineno if pos else 'x'}:{pos.colno if pos else 'x'} where it was not expected"
         )

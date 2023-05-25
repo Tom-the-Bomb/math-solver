@@ -84,6 +84,7 @@ class BinaryOp(Ast):
     def __init__(self, left: Ast, right: Ast, /):
         self.left = left
         self.right = right
+        print('SASDASDSA', self.left.eval(), self.__class__.__name__, self.right.eval())
 
     def eval(self, /) -> Number:
         raise NotImplementedError

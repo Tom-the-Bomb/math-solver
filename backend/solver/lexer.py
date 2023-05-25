@@ -43,8 +43,8 @@ class LexerGenerator(Generator):
         brace: bool = True,
     ) -> None:
         if round:
-            self.add('LPAREN', r'\(|\[')
-            self.add('RPAREN', r'\)|\]')
+            self.add('LBRACK', r'\(|\[')
+            self.add('RBRACK', r'\)|\]')
         if brace:
             self.add('LBRACE', r'\{')
             self.add('RBRACE', r'\}')
