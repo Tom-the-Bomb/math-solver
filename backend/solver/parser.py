@@ -41,18 +41,16 @@ class Parser:
         *,
         functions: Optional[dict[str, Callable[[Any], Any]]] = None,
         constants: Optional[dict[str, Decimal | NumberSymbol | int]] = None,
-        variables: Optional[dict[str, Decimal]] = None,
     ) -> None:
         self.functions = functions or dict(inspect.getmembers(func_mod))
-        self.constants = constants or {
+        self.constants = {**(constants or {}), **{
             'e': E,
             'i': I,
             'pi': pi,
             'tau': 2 * pi,
             'phi': GoldenRatio,
             'inf': oo,
-        }
-        self.constants.update(variables or {})
+        }}
 
         self.variables: list[Variable] = []
 
@@ -80,8 +78,7 @@ class Parser:
     @pg.production('equation : expr GT expr')
     @pg.production('equation : expr GE expr')
     def equation(_, p: list[Token], /) -> BinaryOp:
-        if len(p) == 1:
-            assert isinstance(p[0], Ast)
+        if len(p) == 1 and isinstance(p[0], Ast):
             return Eq(p[0], Number('0'))
 
         return {
@@ -91,24 +88,29 @@ class Parser:
             'GT': Gt,
             'GE': Ge,
         }[p[1].gettokentype()](p[0], p[2])
-
-    @staticmethod
-    @pg.production('expr : group')
-    def group_expr(_, p: list[Ast]) -> Ast:
-        return p[0]
+    
+    @pg.production('group : group group', precedence='MUL')
+    @pg.production('expr : group group', precedence='MUL')
+    def implicit_mul(_, p: list[Ast], /) -> Mul:
+        return Mul(p[0], p[1])
 
     @staticmethod
     @pg.production('group : NUMBER')
+    @pg.production('expr : NUMBER')
     def number(_, p: list[Token], /) -> Number:
         return Number(p[0].getstr())
 
     @staticmethod
     @pg.production('group : LBRACK expr RBRACK')
     @pg.production('group : LBRACE expr RBRACE')
+    @pg.production('expr : LBRACK expr RBRACK')
+    @pg.production('expr : LBRACE expr RBRACE')
     def paren(_, p: list[Ast], /) -> Ast:
         return p[1]
 
     @staticmethod
+    
+    @pg.production('group : expr FAC')
     @pg.production('expr : expr FAC')
     def factorial(_, p: list[Token], /) -> Fac:
         return Fac(p[0].getstr())
@@ -119,7 +121,9 @@ class Parser:
     @pg.production('expr : expr MUL expr')
     @pg.production('expr : expr DIV expr')
     @pg.production('expr : expr MOD expr')
+
     @pg.production('group : expr POW expr')
+    @pg.production('expr : expr POW expr')
     def binop(_, p: list[Token], /) -> BinaryOp:
         return {
             'ADD': Add,
@@ -166,12 +170,6 @@ class Parser:
         return expr
 
     @staticmethod
-    @pg.production('group : variable')
-    @pg.production('group : function')
-    def var_fn(_, p: list[Ast]) -> Ast:
-        return p[0]
-
-    @staticmethod
     @pg.production('function : IDENT LBRACK expr RBRACK')
     @pg.production('function : IDENT SUBSCRIPT NUMBER LBRACK expr RBRACK')
     def fx(state: Parser, p: list[Any], /) -> Function | Mul:
@@ -180,16 +178,20 @@ class Parser:
             return Function(f, p[1], p[-2]) if len(p) == 6 else Function(f, p[-2])
 
         return Mul(Variable(f_name), p[-2])
-
-    @pg.production('group : group group', precedence='MUL')
-    def implicit_mul(_, p: list[Ast], /) -> Mul:
-        return Mul(p[0], p[1])
+    
+    @staticmethod
+    @pg.production('group : variable')
+    @pg.production('group : function')
+    @pg.production('expr : variable')
+    @pg.production('expr : function')
+    def var_fn(_, p: list[Ast]) -> Ast:
+        return p[0]
 
     @staticmethod
     @pg.error
     def error_handler(_, token: Token) -> NoReturn:
         pos: Optional[SourcePosition] = token.getsourcepos()
         raise ValueError(
-            f"Encountered a {token.gettokentype()}: '{token.getstr()}' \
-            @ {pos.lineno if pos else 'x'}:{pos.colno if pos else 'x'} where it was not expected"
+            f"Encountered a {token.gettokentype()}: '{token.getstr()}' "
+            f"@ {getattr(pos, 'lineno', 'x')}:{getattr(pos, 'colno', 'x')} where it was not expected"
         )
