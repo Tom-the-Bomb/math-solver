@@ -91,7 +91,7 @@ class Parser:
             'GT': Gt,
             'GE': Ge,
         }[p[1].gettokentype()](p[0], p[2])
-    
+
     @staticmethod
     @pg.production('expr : group')
     def group_expr(_, p: list[Ast]) -> Ast:
@@ -190,5 +190,6 @@ class Parser:
     def error_handler(_, token: Token) -> NoReturn:
         pos: Optional[SourcePosition] = token.getsourcepos()
         raise ValueError(
-            f"Encountered a {token.gettokentype()}: '{token.getstr()}' @ {pos.lineno if pos else 'x'}:{pos.colno if pos else 'x'} where it was not expected"
+            f"Encountered a {token.gettokentype()}: '{token.getstr()}' \
+            @ {pos.lineno if pos else 'x'}:{pos.colno if pos else 'x'} where it was not expected"
         )
