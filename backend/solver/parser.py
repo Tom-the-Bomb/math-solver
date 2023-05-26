@@ -88,43 +88,48 @@ class Parser:
             'GT': Gt,
             'GE': Ge,
         }[p[1].gettokentype()](p[0], p[2])
-    
-    @pg.production('group : group group', precedence='MUL')
+
     @pg.production('expr : group group', precedence='MUL')
+    @pg.production('group : group group', precedence='MUL')
     def implicit_mul(_, p: list[Ast], /) -> Mul:
         return Mul(p[0], p[1])
 
     @staticmethod
     @pg.production('group : NUMBER')
-    @pg.production('expr : NUMBER')
     def number(_, p: list[Token], /) -> Number:
         return Number(p[0].getstr())
 
     @staticmethod
     @pg.production('group : LBRACK expr RBRACK')
     @pg.production('group : LBRACE expr RBRACE')
-    @pg.production('expr : LBRACK expr RBRACK')
-    @pg.production('expr : LBRACE expr RBRACE')
     def paren(_, p: list[Ast], /) -> Ast:
         return p[1]
 
     @staticmethod
-    
     @pg.production('group : expr FAC')
-    @pg.production('expr : expr FAC')
     def factorial(_, p: list[Token], /) -> Fac:
         return Fac(p[0].getstr())
 
     @staticmethod
     @pg.production('expr : expr ADD expr')
+    @pg.production('expr : group ADD expr')
+    @pg.production('expr : expr ADD group')
+
     @pg.production('expr : expr SUB expr')
+    @pg.production('expr : group SUB expr')
+    @pg.production('expr : expr SUB group')
+
     @pg.production('expr : expr MUL expr')
+
     @pg.production('expr : expr DIV expr')
+
     @pg.production('expr : expr MOD expr')
 
     @pg.production('group : expr POW expr')
-    @pg.production('expr : expr POW expr')
+    @pg.production('group : group POW expr')
+    @pg.production('group : expr POW group')
     def binop(_, p: list[Token], /) -> BinaryOp:
+        print(p)
         return {
             'ADD': Add,
             'SUB': Sub,
@@ -135,18 +140,9 @@ class Parser:
         }[p[1].gettokentype()](p[0], p[2])
 
     @staticmethod
-    @pg.production("expr : ADD expr", precedence='UNOP')
-    @pg.production("expr : SUB expr", precedence='UNOP')
-    def unop(_, p: list[Token], /) -> UnaryOp:
-        return {
-            'ADD': Pos,
-            'SUB': Neg,
-        }[p[0].gettokentype()](p[1])
-
-    @staticmethod
-    @pg.production('variable : IDENT')
-    @pg.production('variable : IDENT SUBSCRIPT IDENT')
-    @pg.production('variable : IDENT SUBSCRIPT NUMBER')
+    @pg.production('group : IDENT')
+    @pg.production('group : IDENT SUBSCRIPT IDENT')
+    @pg.production('group : IDENT SUBSCRIPT NUMBER')
     def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul:
         ident = p[0].getstr()
         if len(p) == 3:
@@ -170,22 +166,27 @@ class Parser:
         return expr
 
     @staticmethod
-    @pg.production('function : IDENT LBRACK expr RBRACK')
-    @pg.production('function : IDENT SUBSCRIPT NUMBER LBRACK expr RBRACK')
+    @pg.production('group : IDENT LBRACK expr RBRACK')
+    @pg.production('group : IDENT SUBSCRIPT NUMBER LBRACK expr RBRACK')
     def fx(state: Parser, p: list[Any], /) -> Function | Mul:
         f_name = p[0].getstr()
         if f := state.functions.get(f_name):
             return Function(f, p[1], p[-2]) if len(p) == 6 else Function(f, p[-2])
 
         return Mul(Variable(f_name), p[-2])
-    
-    @staticmethod
-    @pg.production('group : variable')
-    @pg.production('group : function')
-    @pg.production('expr : variable')
-    @pg.production('expr : function')
-    def var_fn(_, p: list[Ast]) -> Ast:
+
+    @pg.production('expr : group')
+    def expr_group(_, p: list[Ast], /) -> Ast:
         return p[0]
+
+    @staticmethod
+    @pg.production("expr : ADD expr", precedence='UNOP')
+    @pg.production("expr : SUB expr", precedence='UNOP')
+    def unop(_, p: list[Token], /) -> UnaryOp:
+        return {
+            'ADD': Pos,
+            'SUB': Neg,
+        }[p[0].gettokentype()](p[1])
 
     @staticmethod
     @pg.error
