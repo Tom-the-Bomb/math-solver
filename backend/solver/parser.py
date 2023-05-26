@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
     from sympy import NumberSymbol
 
+__all__ = ('Parser',)
+
 class Parser:
     lg = LexerGenerator()
     pg = ParserGenerator(
@@ -31,6 +33,7 @@ class Parser:
             ('right', ['UNOP']),
             ('left', ['ADD', 'SUB']),
             ('left', ['MUL', 'DIV', 'MOD']),
+            ('left', ['IMPL_MUL']),
             ('right', ['POW']),
             ('left', ['FAC']),
         ]
@@ -89,8 +92,10 @@ class Parser:
             'GE': Ge,
         }[p[1].gettokentype()](p[0], p[2])
 
-    @pg.production('expr : group group', precedence='MUL')
-    @pg.production('group : group group', precedence='MUL')
+    @pg.production('expr : left_group group', precedence='IMPL_MUL')
+    @pg.production('group : left_group group', precedence='IMPL_MUL')
+    @pg.production('expr : group group', precedence='IMPL_MUL')
+    @pg.production('group : group group', precedence='IMPL_MUL')
     def implicit_mul(_, p: list[Ast], /) -> Mul:
         return Mul(p[0], p[1])
 
@@ -128,8 +133,8 @@ class Parser:
     @pg.production('group : expr POW expr')
     @pg.production('group : group POW expr')
     @pg.production('group : expr POW group')
+    @pg.production('group : group POW group')
     def binop(_, p: list[Token], /) -> BinaryOp:
-        print(p)
         return {
             'ADD': Add,
             'SUB': Sub,
@@ -176,12 +181,15 @@ class Parser:
         return Mul(Variable(f_name), p[-2])
 
     @pg.production('expr : group')
+    @pg.production('expr : left_group')
     def expr_group(_, p: list[Ast], /) -> Ast:
         return p[0]
 
     @staticmethod
-    @pg.production("expr : ADD expr", precedence='UNOP')
-    @pg.production("expr : SUB expr", precedence='UNOP')
+    @pg.production("left_group : ADD group", precedence='UNOP')
+    @pg.production("left_group : SUB group", precedence='UNOP')
+    @pg.production("left_group : ADD left_group", precedence='UNOP')
+    @pg.production("left_group : SUB left_group", precedence='UNOP')
     def unop(_, p: list[Token], /) -> UnaryOp:
         return {
             'ADD': Pos,
