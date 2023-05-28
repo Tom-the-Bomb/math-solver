@@ -19,13 +19,11 @@ class LexerGenerator(Generator):
         self.add('EQ', '=')
         if inequality:
             self.add('LT', '<')
-            self.add('LE', '<=')
             self.add('GT', '>')
-            self.add('GE', '>=')
 
     def add_basic(self, /) -> None:
         self.add('NUMBER', r'([0-9]+(\.[0-9]*)?|\.[0-9]+)')
-        self.add('IDENT', r'[a-zA-Z_][a-zA-Z0-9_]*')
+        self.add('IDENT', r'[a-zA-Z][a-zA-Z0-9]*')
 
     def add_operations(self) -> None:
         self.add('ADD', r'\+')

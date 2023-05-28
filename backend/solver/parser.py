@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import NoReturn, Optional, Callable, Any, TYPE_CHECKING
 from decimal import Decimal
 import inspect
-import warnings
 
 from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
@@ -22,6 +21,10 @@ if TYPE_CHECKING:
     from sympy import NumberSymbol
 
 __all__ = ('Parser',)
+
+def _to_camel_case(string: str) -> str:
+    terms = iter(string.split('_'))
+    return next(terms) + ''.join(t.title() for t in terms)
 
 class Parser:
     lg = LexerGenerator()
@@ -42,18 +45,21 @@ class Parser:
     def __init__(
         self, /,
         *,
-        functions: Optional[dict[str, Callable[[Any], Any]]] = None,
+        functions: Optional[dict[str, Callable[..., Any]]] = None,
         constants: Optional[dict[str, Decimal | NumberSymbol | int]] = None,
     ) -> None:
-        self.functions = functions or dict(inspect.getmembers(func_mod))
-        self.constants = {**(constants or {}), **{
+        self.functions = {
+            **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
+            **(functions or {})
+        }
+        self.constants = {**{
             'e': E,
             'i': I,
             'pi': pi,
             'tau': 2 * pi,
             'phi': GoldenRatio,
             'inf': oo,
-        }}
+        }, **(constants or {})}
 
         self.variables: list[Variable] = []
 
@@ -61,36 +67,33 @@ class Parser:
         self._parser: LRParser = self.pg.build()
 
     def parse(self, equation: str) -> Conditional:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-
-            try:
-                return self._parser.parse(
-                    self._lexer.lex(equation),
-                    state=self
-                ) # type: ignore
-            except LexingError as e:
-                pos: SourcePosition = e.getsourcepos()
-                raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
+        try:
+            return self._parser.parse(
+                self._lexer.lex(equation),
+                state=self
+            ) # type: ignore
+        except LexingError as e:
+            pos: SourcePosition = e.getsourcepos()
+            raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
 
     @staticmethod
     @pg.production('equation : expr')
     @pg.production('equation : expr EQ expr')
     @pg.production('equation : expr LT expr')
-    @pg.production('equation : expr LE expr')
+    @pg.production('equation : expr LT EQ expr')
     @pg.production('equation : expr GT expr')
-    @pg.production('equation : expr GE expr')
+    @pg.production('equation : expr GT EQ expr')
     def equation(_, p: list[Token], /) -> BinaryOp:
         if len(p) == 1 and isinstance(p[0], Ast):
             return Eq(p[0], Number('0'))
 
         return {
-            'EQ': Eq,
-            'LT': Lt,
-            'LE': Le,
-            'GT': Gt,
-            'GE': Ge,
-        }[p[1].gettokentype()](p[0], p[2])
+            ('EQ', None): Eq,
+            ('LT', None): Lt,
+            ('LT', 'EQ'): Le,
+            ('GT', None): Gt,
+            ('GT', 'EQ'): Ge,
+        }[(p[1].gettokentype(), getattr(p[2], 'gettokentype', lambda: None)())](p[0], p[-1])
 
     @pg.production('expr : left_group group', precedence='IMPL_MUL')
     @pg.production('group : left_group group', precedence='IMPL_MUL')
@@ -125,10 +128,16 @@ class Parser:
     @pg.production('expr : expr SUB group')
 
     @pg.production('expr : expr MUL expr')
+    @pg.production('expr : group MUL expr')
+    @pg.production('expr : expr MUL group')
 
     @pg.production('expr : expr DIV expr')
+    @pg.production('expr : group DIV expr')
+    @pg.production('expr : expr DIV group')
 
     @pg.production('expr : expr MOD expr')
+    @pg.production('expr : group MOD expr')
+    @pg.production('expr : expr MOD group')
 
     @pg.production('group : expr POW expr')
     @pg.production('group : group POW expr')
@@ -144,18 +153,31 @@ class Parser:
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
 
+    @pg.production('group : IDENT LBRACK group RBRACK', precedence='FAC')
+    @pg.production('group : IDENT SUBSCRIPT group LBRACK group RBRACK', precedence='FAC')
+    def fx(state: Parser, p: list[Ast], /) -> Function | Mul:
+        assert isinstance(p[0], Token)
+
+        ident = p[0].getstr()
+        if f := state.functions.get(ident):
+            arguments = (p[2],)
+            if len(p) == 6:
+                arguments += (p[-2],)
+            return Function(f, *arguments)
+
+        return Mul(Variable(ident), p[-2])
+
     @staticmethod
-    @pg.production('group : IDENT')
-    @pg.production('group : IDENT SUBSCRIPT IDENT')
-    @pg.production('group : IDENT SUBSCRIPT NUMBER')
-    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul:
+    @pg.production('group : IDENT', precedence='FAC')
+    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul | Function:
         ident = p[0].getstr()
         if len(p) == 3:
             ident += f'_{p[-1].getstr()}'
 
         if x := state.constants.get(ident):
             return Constant(x)
-        if len(ident) == 1:
+
+        if len(ident) == 1 or len(p) == 3:
             var = Variable(ident)
             state.variables.append(var)
             return var
@@ -169,16 +191,6 @@ class Parser:
                 state.variables.append(x)
             expr = Mul(expr, x)
         return expr
-
-    @staticmethod
-    @pg.production('group : IDENT LBRACK expr RBRACK')
-    @pg.production('group : IDENT SUBSCRIPT NUMBER LBRACK expr RBRACK')
-    def fx(state: Parser, p: list[Any], /) -> Function | Mul:
-        f_name = p[0].getstr()
-        if f := state.functions.get(f_name):
-            return Function(f, p[1], p[-2]) if len(p) == 6 else Function(f, p[-2])
-
-        return Mul(Variable(f_name), p[-2])
 
     @pg.production('expr : group')
     @pg.production('expr : left_group')

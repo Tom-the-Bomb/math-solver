@@ -1,3 +1,3 @@
 from .solve import Solver
 
-print(Solver("1 + 2 + 3").parsed_equation)
+print(Solver("1 + 2x").parsed_equation)

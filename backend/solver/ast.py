@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias, TYPE_CHECKING
+from typing import Any, Callable, TypeAlias, Optional, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from click import argument
 
 from sympy import (
     Symbol,
@@ -59,12 +60,12 @@ class Ast(ABC, BaseBox):
         raise NotImplementedError
 
 class Function(Ast):
-    def __init__(self, func: Callable[[Any], Any], /, *arguments: Ast) -> None:
+    def __init__(self, func: Callable[..., Any], /, *arguments: Ast) -> None:
         self.func = func
         self.arguments = arguments
 
-    def eval(self, /) -> Symbol:
-        return self.func(*[arg.eval() for arg in self.arguments])
+    def eval(self, /) -> Callable[..., Any]:
+        return self.func(*[a.eval() for a in self.arguments])
 
 class Constant(Ast):
     def __init__(self, value: NumberSymbol | Decimal | int, /) -> None:

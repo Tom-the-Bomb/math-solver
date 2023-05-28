@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, Any
+from typing import TYPE_CHECKING, TypeAlias, Optional, Any
 from functools import cached_property
 from contextlib import redirect_stdout
 from io import StringIO
+import warnings
 
 from sympy import (
     oo,
@@ -26,8 +27,11 @@ if TYPE_CHECKING:
     Equation: TypeAlias = Relational | bool
 
 class Solver:
-    def __init__(self, /, equation: str) -> None:
-        self.parser = Parser()
+    def __init__(self, /, equation: str, *, parser: Optional[Parser] = None) -> None:
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.parser = parser or Parser()
+
         self.raw_equation = equation
 
     @cached_property
