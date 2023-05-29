@@ -95,6 +95,7 @@ class Parser:
             ('GT', 'EQ'): Ge,
         }[(p[1].gettokentype(), getattr(p[2], 'gettokentype', lambda: None)())](p[0], p[-1])
 
+    @staticmethod
     @pg.production('expr : left_group group', precedence='IMPL_MUL')
     @pg.production('group : left_group group', precedence='IMPL_MUL')
     @pg.production('expr : group group', precedence='IMPL_MUL')
@@ -153,8 +154,9 @@ class Parser:
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
 
-    @pg.production('group : IDENT LBRACK group RBRACK', precedence='FAC')
-    @pg.production('group : IDENT SUBSCRIPT group LBRACK group RBRACK', precedence='FAC')
+    @staticmethod
+    @pg.production('group : IDENT LBRACK expr RBRACK', precedence='FAC')
+    @pg.production('group : IDENT SUBSCRIPT group LBRACK expr RBRACK', precedence='FAC')
     def fx(state: Parser, p: list[Ast], /) -> Function | Mul:
         assert isinstance(p[0], Token)
 
@@ -192,6 +194,7 @@ class Parser:
             expr = Mul(expr, x)
         return expr
 
+    @staticmethod
     @pg.production('expr : group')
     @pg.production('expr : left_group')
     def expr_group(_, p: list[Ast], /) -> Ast:

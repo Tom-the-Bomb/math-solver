@@ -53,7 +53,6 @@ __all__ = (
 class Ast(ABC, BaseBox):
     def __init__(self, value: str, /) -> None:
         self.value = value
-        print('Ast |', self.__class__.__name__, self.value)
 
     @abstractmethod
     def eval(self, /) -> Any:
