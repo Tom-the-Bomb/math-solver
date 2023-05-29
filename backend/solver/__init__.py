@@ -1,3 +1,7 @@
 from .solve import Solver
+from .parser import Parser
 
-print(Solver("1 + 2 + 3").parsed_equation)
+__all__ = (
+    'Solver',
+    'Parser',
+)
