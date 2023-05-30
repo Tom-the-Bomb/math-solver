@@ -8,6 +8,7 @@ from click import argument
 from sympy import (
     Symbol,
     Eq as S_Eq,
+    Ne as S_Ne,
     Lt as S_Lt,
     Le as S_Le,
     Gt as S_Gt,
@@ -44,6 +45,7 @@ __all__ = (
     'Pow',
     'Fac',
     'Eq',
+    'Ne',
     'Lt',
     'Le',
     'Gt',
@@ -146,6 +148,10 @@ class Conditional(BinaryOp, ABC):
 class Eq(Conditional):
     def eval(self, /) -> Equation:
         return S_Eq(self.left.eval(), self.right.eval())
+
+class Ne(Conditional):
+    def eval(self, /) -> Equation:
+        return S_Ne(self.left.eval(), self.right.eval())
 
 class Lt(Conditional):
     def eval(self, /) -> Equation:

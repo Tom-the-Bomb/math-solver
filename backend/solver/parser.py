@@ -79,6 +79,7 @@ class Parser:
     @staticmethod
     @pg.production('equation : expr')
     @pg.production('equation : expr EQ expr')
+    @pg.production('equation : expr FAC EQ expr')
     @pg.production('equation : expr LT expr')
     @pg.production('equation : expr LT EQ expr')
     @pg.production('equation : expr GT expr')
@@ -89,6 +90,7 @@ class Parser:
 
         return {
             ('EQ', None): Eq,
+            ('FAC', 'EQ'): Ne,
             ('LT', None): Lt,
             ('LT', 'EQ'): Le,
             ('GT', None): Gt,
