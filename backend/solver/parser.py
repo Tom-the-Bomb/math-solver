@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import NoReturn, Optional, Callable, Any, TYPE_CHECKING
+from typing import ClassVar, NoReturn, Optional, Callable, Any, TYPE_CHECKING
 from decimal import Decimal
 import inspect
 
@@ -27,8 +27,8 @@ def _to_camel_case(string: str) -> str:
     return next(terms) + ''.join(t.title() for t in terms)
 
 class Parser:
-    lg = LexerGenerator()
-    pg = ParserGenerator(
+    lg: ClassVar[LexerGenerator] = LexerGenerator()
+    pg: ClassVar[ParserGenerator] = ParserGenerator(
         [
             token.name for token in lg.rules
         ],
