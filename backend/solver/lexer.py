@@ -23,7 +23,7 @@ class LexerGenerator(Generator):
 
     def add_basic(self, /) -> None:
         self.add('NUMBER', r'([0-9]+(\.[0-9]*)?|\.[0-9]+)')
-        self.add('IDENT', r'[a-zA-Z][a-zA-Z0-9]*')
+        self.add('IDENT', r'[a-zA-Z]+')
 
     def add_operations(self) -> None:
         self.add('ADD', r'\+')
