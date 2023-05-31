@@ -1,3 +1,3 @@
 @ECHO off
 
-py -m solver
+py test_solver.py

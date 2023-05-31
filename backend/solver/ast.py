@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias, Optional, TYPE_CHECKING
+from typing import Any, Callable, TypeAlias, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from click import argument
 
 from sympy import (
     Symbol,
@@ -55,7 +54,6 @@ __all__ = (
 class Ast(ABC, BaseBox):
     def __init__(self, value: str, /) -> None:
         self.value = value
-        print(self.__class__.__name__, '|', self.value)
 
     @abstractmethod
     def eval(self, /) -> Any:
@@ -88,7 +86,6 @@ class BinaryOp(Ast):
     def __init__(self, left: Ast, right: Ast, /):
         self.left = left
         self.right = right
-        print('Bin |', self.left.eval(), self.__class__.__name__, self.right.eval())
 
     def eval(self, /) -> Number:
         raise NotImplementedError
@@ -96,7 +93,6 @@ class BinaryOp(Ast):
 class UnaryOp(Ast):
     def __init__(self, right: Ast, /):
         self.right = right
-        print('Un |', self.__class__.__name__, self.right.eval())
 
     def eval(self, /) -> Number:
         raise NotImplementedError
@@ -134,11 +130,11 @@ class Pow(BinaryOp):
         return self.left.eval() ** self.right.eval()
 
 class Fac(Ast):
-    def __init__(self, x: Any, /) -> None:
+    def __init__(self, x: Ast, /) -> None:
         self.x = x
 
     def eval(self, /) -> factorial:
-        return factorial(self.x)
+        return factorial(self.x.eval())
 
 class Conditional(BinaryOp, ABC):
     @abstractmethod

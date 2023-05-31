@@ -16,7 +16,7 @@ from sympy import (
     solveset as s_solveset,
 )
 
-from .parser_2 import Parser
+from .parser import Parser
 
 if TYPE_CHECKING:
     from sympy import Set, Add, Mul, Order, Expr, Basic

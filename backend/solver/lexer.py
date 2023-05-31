@@ -10,16 +10,17 @@ class LexerGenerator(Generator):
     def add_rules(self, /) -> None:
         self.ignore(r'\s+')
 
+        self.add_relational()
         self.add_basic()
         self.add_operations()
-        self.add_relational()
         self.add_groupers()
 
     def add_relational(self, /, *, inequality: bool = True) -> None:
-        self.add('EQ', '=')
         if inequality:
+            self.add('NE', '!=')
             self.add('LT', '<')
             self.add('GT', '>')
+        self.add('EQ', '=')
 
     def add_basic(self, /) -> None:
         self.add('NUMBER', r'([0-9]+(\.[0-9]*)?|\.[0-9]+)')
@@ -38,11 +39,16 @@ class LexerGenerator(Generator):
     def add_groupers(
         self, /,
         *,
+        round: bool = True,
+        square: bool = True,
         brace: bool = True,
     ) -> None:
         if round:
-            self.add('LBRACK', r'\(|\[')
-            self.add('RBRACK', r'\)|\]')
+            self.add('LPAREN', r'\(')
+            self.add('RPAREN', r'\)')
+        if square:
+            self.add('LBRACK', r'\[')
+            self.add('RBRACK', r'\]')
         if brace:
             self.add('LBRACE', r'\{')
             self.add('RBRACE', r'\}')
