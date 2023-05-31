@@ -1,7 +1,3 @@
 from . import Solver
 
-try:
-    print(Solver("1 + 2x").parsed_equation)
-finally:
-    print("-"*30)
-    print(Solver("1 + 2 + 3").parsed_equation)
+print(Solver("4x sin(2xyz(x+x2)) + 1 - 3 + 5").parsed_equation)
