@@ -6,6 +6,7 @@ def test() -> None:
         "1 - 2 + -x + -3 - 4 + 5x - +0! != 7 % 2",
         "2log_2(x + 1)(y - pi) >= e",
         "1 + 2x - 3x - 9x^2 - 7 = 3xyz2",
+        "[-inf, x + 1)",
     )
     
     for equation in equations:

@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from sympy import (
     Symbol,
+    Interval as S_Interval,
     Eq as S_Eq,
     Ne as S_Ne,
     Lt as S_Lt,
@@ -27,6 +28,7 @@ if TYPE_CHECKING:
 
 __all__ = (
     'Ast',
+    'Interval',
     'Function',
     'Constant',
     'Variable',
@@ -58,6 +60,20 @@ class Ast(ABC, BaseBox):
     @abstractmethod
     def eval(self, /) -> Any:
         raise NotImplementedError
+
+class Interval(Ast):
+    def __init__(self, left: str, a: Ast, b: Ast, right: str) -> None:
+        self.brackets = left + right
+        self.a = a
+        self.b = b
+
+    def eval(self, /) -> S_Interval:
+        return {
+            '[]': S_Interval,
+            '()': S_Interval.open,
+            '(]': S_Interval.Lopen,
+            '[)': S_Interval.Ropen,
+        }[self.brackets](self.a.eval(), self.b.eval())
 
 class Function(Ast):
     def __init__(self, func: Callable[..., Any], /, *arguments: Ast) -> None:

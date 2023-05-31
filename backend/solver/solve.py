@@ -27,12 +27,21 @@ if TYPE_CHECKING:
     Equation: TypeAlias = Relational | bool
 
 class Solver:
-    def __init__(self, /, equation: str, *, parser: Optional[Parser] = None) -> None:
+    def __init__(
+        self, /,
+        equation: str,
+        *,
+        domain: Optional[str] = None,
+        parser: Optional[Parser] = None,
+    ) -> None:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.parser = parser or Parser()
 
+        self.domain = domain
         self.raw_equation = equation
+
+        self.kwargs = dict(domain=self.domain) if self.domain else {}
 
     @cached_property
     def parsed_equation(self, /) -> Equation:
@@ -41,10 +50,10 @@ class Solver:
     @cached_property
     def solution(self, /) -> Set | list[Any]:
         try:
-            return s_solveset(self.parsed_equation)
+            return s_solveset(self.parsed_equation, **self.kwargs)
         except Exception as e:
             try:
-                return s_solve(self.parsed_equation)
+                return s_solve(self.parsed_equation, **self.kwargs)
             except Exception as e2:
                 raise e from e2
 
@@ -81,8 +90,8 @@ class Solver:
         var = self.parser.variables[0]
         result = {}
 
-        if abs(maxima := maximum(self.parsed_equation, var)) != oo:
+        if abs(maxima := maximum(self.parsed_equation, var), **self.kwargs) != oo:
             result['max'] = maxima
-        if abs(minima := minimum(self.parsed_equation, var)) != oo:
+        if abs(minima := minimum(self.parsed_equation, var), **self.kwargs) != oo:
             result['min'] = minima
         return result

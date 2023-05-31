@@ -11,7 +11,7 @@ from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
 from sympy import (
     E, I, pi, GoldenRatio, oo,
-    functions as func_mod
+    functions as func_mod,
 )
 
 from .lexer import LexerGenerator
@@ -82,6 +82,18 @@ class Parser:
         except LexingError as e:
             pos: SourcePosition = e.getsourcepos()
             raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
+        
+    @staticmethod
+    @pg.production('equation : LBRACK expr COMMA expr RBRACK')
+    @pg.production('equation : LBRACK expr COMMA expr RPAREN')
+
+    @pg.production('equation : LPAREN expr COMMA expr RBRACK')
+    @pg.production('equation : LPAREN expr COMMA expr RPAREN')
+    def domain_interval(_, p: list[Token]) -> Interval:
+        assert isinstance(p[1], Ast)
+        assert isinstance(p[-2], Ast)
+        
+        return Interval(p[0].getstr(), p[1], p[-2], p[-1].getstr())
 
     @staticmethod
     @pg.production('equation : expr')
@@ -104,6 +116,7 @@ class Parser:
             ('GT', 'EQ'): Ge,
         }[(p[1].gettokentype(), getattr(p[2], 'gettokentype', lambda: None)())](p[0], p[-1])
 
+    @staticmethod
     @pg.production('expr : group')
     def group(_, p: list[Ast], /) -> Ast:
         return p[0]
@@ -113,6 +126,7 @@ class Parser:
     def implicit_mul(_, p: list[Ast], /) -> Mul:
         return Mul(p[0], p[1])
 
+    @staticmethod
     @pg.production('group : NUMBER')
     def number(_, p: list[Token], /) -> Number:
         return Number(p[0].getstr())

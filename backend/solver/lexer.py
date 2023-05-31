@@ -27,6 +27,7 @@ class LexerGenerator(Generator):
         self.add('IDENT', r'[a-zA-Z]+')
 
     def add_operations(self) -> None:
+        self.add('COMMA', ',')
         self.add('ADD', r'\+')
         self.add('SUB', '-')
         self.add('MUL', r'\*')
