@@ -12,7 +12,6 @@ def test_parsing() -> None:
     for equation in equations:
         print(equation, '|', Solver(equation).parsed_equation)
 
-
 def test_functions() -> None:
     print(
         Solver(
@@ -22,12 +21,23 @@ def test_functions() -> None:
         ).parsed_equation
     )
 
-def test_properties() -> None:
+def test_domain() -> None:
     print(
-        Solver('x^2 + 4x + 4').factored
+        Solver(
+            'sin(x)',
+            domain='[0, 2pi]',
+        ).parsed_solution
     )
+
+def test_properties() -> None:
+    solver = Solver('x^2 + 4x + 4')
+    print('factored:', solver.factored)
+    print('{}: {}'.format(*tuple(solver.max_min.items())[0]))
+    print('domain:', solver.domain)
+    print('range:', solver.range)
 
 if __name__ == '__main__':
     test_parsing()
     test_functions()
     test_properties()
+    test_domain()

@@ -8,9 +8,9 @@ import warnings
 
 from sympy import (
     oo,
+    Reals,
     pprint,
     Interval,
-    Complexes,
     latex as s_latex,
     factor, expand, simplify,
     maximum, minimum,
@@ -58,9 +58,9 @@ class Solver:
                 constants=constants,
                 functions=parsed_functions,
             )
-        self.parsed_equation
+            self.parsed_equation
 
-        self._domain = Parser().parse(domain).eval() if domain else None
+            self._domain = Parser().parse(domain).eval() if domain else None
         self.solve_for = solve_for
 
         self.kwargs = {}
@@ -136,7 +136,7 @@ class Solver:
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
-                'domain': Complexes,
+                'domain': Reals,
                 **self.kwargs
             }
             return continuous_domain(self.parsed_equation.lhs, **kwargs) # type: ignore
@@ -148,7 +148,7 @@ class Solver:
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
-                'domain': Complexes,
+                'domain': Reals,
                 **self.kwargs
             }
             return function_range(self.parsed_equation.lhs, **kwargs) # type: ignore
