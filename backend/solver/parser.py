@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING, Any,
-    TypeAlias, ClassVar, NoReturn, Optional, Callable,
+    TypeAlias, ClassVar, NoReturn, Optional, Callable, Iterable,
 )
 from decimal import Decimal
 import inspect
@@ -90,7 +90,7 @@ class Parser:
             raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
 
     @staticmethod
-    @pg.production('equation : func EQ expr', precedence='FAC')
+    @pg.production('equation : func EQ expr')
     def defined_function(_, p: list[Ast]) -> DefinedFunction:
         assert isinstance(p[0], list)
         f_name = p[0][0].getstr()
@@ -167,7 +167,8 @@ class Parser:
     @pg.production('expr : expr MOD expr')
 
     @pg.production('group : group POW group')
-    def binop(_, p: list[Token], /) -> BinaryOp:
+    def binop(_, p: list[Ast], /) -> BinaryOp:
+        assert isinstance(p[1], Token)
         return {
             'ADD': Add,
             'SUB': Sub,
@@ -212,12 +213,18 @@ class Parser:
 
         if len(p) in (6, 8) and subscript:
             ident += f'_{subscript.eval()}'
-        return Mul(Variable(ident), p[-2])
+        return Mul(
+            Parser.multi_var(
+                state,
+                [Parser.variable(state, [p[0]])],
+            ),
+            p[-2],
+        )
 
     @staticmethod
-    @pg.production('group : IDENT')
-    @pg.production('group : IDENT SUBSCRIPT NUMBER')
-    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Mul | Function:
+    @pg.production('var : IDENT')
+    @pg.production('var : IDENT SUBSCRIPT NUMBER')
+    def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Iterable[Variable]:
         ident = p[0].getstr()
         if len(p) == 3:
             ident += f'_{p[-1].getstr()}'
@@ -225,20 +232,50 @@ class Parser:
         if x := state.constants.get(ident):
             return Constant(x)
 
-        if len(ident) == 1 or len(p) == 3:
+        raw = p[0].getstr()
+        if len(ident) == 1 or len(raw) == 1:
             var = Variable(ident)
             state.variables.append(var)
             return var
+        
+        if len(p) == 3:
+            return map(Variable, [*raw[:-1], raw[-1] + f'_{p[-1].getstr()}'])
+        else:
+            return map(Variable, ident)
+    
+    @pg.production('group : var POW group')
+    @pg.production('group : var FAC')
+    @pg.production('group : var')
+    def multi_var(state: Parser, p: list[Ast | Iterable[Variable]]) -> Number | Constant | Variable | Mul | Fac | Pow:
+        def do_op(var: Constant | Variable) -> Constant | Variable | Fac | Pow:
+            match len(p):
+                case 2:
+                    return Fac(var)
+                case 3:
+                    assert isinstance(p[2], Ast)
+                    return Pow(var, p[2])
+                case _:
+                    return var
 
-        variables = map(Variable, ident)
-        expr = Mul(next(variables), next(variables))
-        for x in variables:
-            if con := state.constants.get(ident):
-                x = Constant(con)
-            else:
-                state.variables.append(x)
-            expr = Mul(expr, x)
-        return expr
+        variables = p[0]
+        if isinstance(variables, map):
+            var_amt = len(variables := tuple(variables))
+    
+            expr = Number('1')
+            for i, x in enumerate(variables):
+                x: Variable
+                if con := state.constants.get(x.value):
+                    sym = Constant(con)
+                else:
+                    sym = x
+                    state.variables.append(sym)
+                if i == var_amt - 1:
+                    sym = do_op(sym)
+                expr = Mul(expr, sym)
+            return expr
+        else:
+            assert isinstance(variables, (Constant, Variable))
+            return do_op(variables)
 
     @staticmethod
     @pg.production("un : ADD group", precedence='UNOP')

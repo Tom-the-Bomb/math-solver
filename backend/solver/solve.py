@@ -21,6 +21,7 @@ from sympy.calculus.util import function_range, continuous_domain
 
 from .parser import Parser, Constants, Functions
 from .ast import DefinedFunction
+from .exceptions import *
 
 if TYPE_CHECKING:
     from sympy import Set, Add, Mul, Order, Expr, Basic
@@ -29,10 +30,6 @@ if TYPE_CHECKING:
 
     Expression: TypeAlias = Add | Mul | Order | Expr | Basic
     Equation: TypeAlias = Relational | bool
-
-class NotAFunction(Exception):
-    def __init__(self, provided: str, /) -> None:
-        super().__init__(f'Invalid function syntax: {provided}\nCorrect Ex: f(x) = x^2')
 
 class Solver:
     def __init__(
@@ -118,30 +115,42 @@ class Solver:
     def max_min(self, /) -> dict[str, Number]:
         result = {}
         kwargs = {
-            'symbol': self.parser.variables[0],
+            'symbol': self.parser.variables[0].eval(),
             **self.kwargs
         }
 
-        if abs(maxima := maximum(self.parsed_equation, **kwargs)) != oo: # type: ignore
-            result['max'] = maxima
-        if abs(minima := minimum(self.parsed_equation, **kwargs)) != oo: # type: ignore
-            result['min'] = minima
+        try:
+            if abs(maxima := maximum(self.parsed_equation.lhs, **kwargs)) != oo: # type: ignore
+                result['max'] = maxima
+        except (ValueError, IndexError) as e:
+            raise CantGetProperty('maxima') from e
+        try:
+            if abs(minima := minimum(self.parsed_equation.lhs, **kwargs)) != oo: # type: ignore
+                result['min'] = minima
+        except (ValueError, IndexError) as e:
+            raise CantGetProperty('minima') from e
         return result
 
     @cached_property
     def domain(self, /) -> Expression:
-        kwargs = {
-            'symbol': self.parser.variables[0],
-            'domain': Complexes,
-            **self.kwargs
-        }
-        return continuous_domain(self.parsed_equation, **kwargs) # type: ignore
-
+        try:
+            kwargs = {
+                'symbol': self.parser.variables[0].eval(),
+                'domain': Complexes,
+                **self.kwargs
+            }
+            return continuous_domain(self.parsed_equation.lhs, **kwargs) # type: ignore
+        except (ValueError, IndexError) as e:
+            raise CantGetProperty('domain') from e
+            
     @cached_property
     def range(self, /) -> Expression:
-        kwargs = {
-            'symbol': self.parser.variables[0],
-            'domain': Complexes,
-            **self.kwargs
-        }
-        return function_range(self.parsed_equation, **kwargs) # type: ignore
+        try:
+            kwargs = {
+                'symbol': self.parser.variables[0].eval(),
+                'domain': Complexes,
+                **self.kwargs
+            }
+            return function_range(self.parsed_equation.lhs, **kwargs) # type: ignore
+        except (ValueError, IndexError) as e:
+            raise CantGetProperty('range') from e
