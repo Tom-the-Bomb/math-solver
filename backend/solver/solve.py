@@ -9,14 +9,18 @@ import warnings
 from sympy import (
     oo,
     pprint,
+    Interval,
+    Complexes,
     latex as s_latex,
     factor, expand, simplify,
     maximum, minimum,
     solve as s_solve,
     solveset as s_solveset,
 )
+from sympy.calculus.util import function_range, continuous_domain
 
-from .parser import Parser
+from .parser import Parser, Constants, Functions
+from .ast import DefinedFunction
 
 if TYPE_CHECKING:
     from sympy import Set, Add, Mul, Order, Expr, Basic
@@ -26,25 +30,50 @@ if TYPE_CHECKING:
     Expression: TypeAlias = Add | Mul | Order | Expr | Basic
     Equation: TypeAlias = Relational | bool
 
+class NotAFunction(Exception):
+    def __init__(self, provided: str, /) -> None:
+        super().__init__(f'Invalid function syntax: {provided}\nCorrect Ex: f(x) = x^2')
+
 class Solver:
     def __init__(
         self, /,
         equation: str,
         *,
         domain: Optional[str] = None,
+        solve_for: Optional[str] = None,
+        functions: Optional[list[str]] = None,
+        constants: Optional[Constants] = None,
         parser: Optional[Parser] = None,
     ) -> None:
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.parser = parser or Parser()
-
-        self.domain = domain
         self.raw_equation = equation
 
-        self.kwargs = dict(domain=self.domain) if self.domain else {}
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+
+            parsed_functions = {}
+            if functions:
+                for f in functions:
+                    parsed = Parser(constants=constants).parse(f)
+                    if not isinstance(parsed, DefinedFunction):
+                        raise NotAFunction(f)
+                    parsed_functions.update(parsed.eval())
+            self.parser = parser or Parser(
+                constants=constants,
+                functions=parsed_functions,
+            )
+        self.parsed_equation
+
+        self._domain = Parser().parse(domain).eval() if domain else None
+        self.solve_for = solve_for
+
+        self.kwargs = {}
+        if self._domain is not None:
+            self.kwargs['domain'] = self._domain
+        if self.solve_for:
+            self.kwargs['symbol'] = self.solve_for
 
     @cached_property
-    def parsed_equation(self, /) -> Equation:
+    def parsed_equation(self, /) -> Equation | Interval | Functions:
         return self.parser.parse(self.raw_equation).eval()
 
     @cached_property
@@ -81,17 +110,38 @@ class Solver:
         return expand(self.parsed_equation)
 
     @cached_property
-    def simplify(self, /) -> Expression:
+    def simplified(self, /) -> Expression:
         """2x + 1 + 3x + 2 -> 5x + 3"""
         return simplify(self.parsed_equation)
 
     @cached_property
     def max_min(self, /) -> dict[str, Number]:
-        var = self.parser.variables[0]
         result = {}
+        kwargs = {
+            'symbol': self.parser.variables[0],
+            **self.kwargs
+        }
 
-        if abs(maxima := maximum(self.parsed_equation, var), **self.kwargs) != oo:
+        if abs(maxima := maximum(self.parsed_equation, **kwargs)) != oo: # type: ignore
             result['max'] = maxima
-        if abs(minima := minimum(self.parsed_equation, var), **self.kwargs) != oo:
+        if abs(minima := minimum(self.parsed_equation, **kwargs)) != oo: # type: ignore
             result['min'] = minima
         return result
+
+    @cached_property
+    def domain(self, /) -> Expression:
+        kwargs = {
+            'symbol': self.parser.variables[0],
+            'domain': Complexes,
+            **self.kwargs
+        }
+        return continuous_domain(self.parsed_equation, **kwargs) # type: ignore
+
+    @cached_property
+    def range(self, /) -> Expression:
+        kwargs = {
+            'symbol': self.parser.variables[0],
+            'domain': Complexes,
+            **self.kwargs
+        }
+        return function_range(self.parsed_equation, **kwargs) # type: ignore

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias, TYPE_CHECKING
+from typing import Any, Callable, Optional, TypeAlias, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
+import re
 
 from sympy import (
     Symbol,
@@ -16,18 +17,21 @@ from sympy import (
 )
 
 from sympy.functions import factorial
+from sympy.core.basic import Basic
 from rply.token import BaseBox
 
 if TYPE_CHECKING:
-    from sympy.core.operations import AssocOp
     from sympy.core.relational import Relational
     from sympy.core.numbers import NumberSymbol
 
-    Expr: TypeAlias = AssocOp | Decimal | int
+    from .parser import Functions
+
+    Expr: TypeAlias = Basic | Decimal | int
     Equation: TypeAlias = Relational | bool
 
 __all__ = (
     'Ast',
+    'DefinedFunction',
     'Interval',
     'Function',
     'Constant',
@@ -75,6 +79,23 @@ class Interval(Ast):
             '[)': S_Interval.Ropen,
         }[self.brackets](self.a.eval(), self.b.eval())
 
+class DefinedFunction(Ast):
+    def __init__(self, f_name: str, argument: Optional[str], expression: BinaryOp) -> None:
+        self.f_name = f_name
+        self.argument = argument
+        self.expression = expression
+
+    def eval(self, /) -> Functions:
+        raw_function = self.expression.eval()
+
+        if self.argument and isinstance(raw_function, Basic):
+            function = lambda arg: raw_function.subs(Symbol(self.argument), arg)
+        elif self.argument:
+            function = lambda _: raw_function
+        else:
+            function = lambda: raw_function
+        return {self.f_name: function}
+
 class Function(Ast):
     def __init__(self, func: Callable[..., Any], /, *arguments: Ast) -> None:
         self.func = func
@@ -103,7 +124,7 @@ class BinaryOp(Ast):
         self.left = left
         self.right = right
 
-    def eval(self, /) -> Number:
+    def eval(self, /) -> Expr:
         raise NotImplementedError
 
 class UnaryOp(Ast):

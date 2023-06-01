@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import (
     TYPE_CHECKING, Any,
-    ClassVar, NoReturn, Optional, Callable,
+    TypeAlias, ClassVar, NoReturn, Optional, Callable,
 )
 from decimal import Decimal
 import inspect
@@ -12,6 +12,7 @@ from rply.lexer import SourcePosition, LexingError
 from sympy import (
     E, I, pi, GoldenRatio, oo,
     functions as func_mod,
+    NumberSymbol,
 )
 
 from .lexer import LexerGenerator
@@ -21,9 +22,14 @@ if TYPE_CHECKING:
     from rply.lexer import Lexer
     from rply.parser import LRParser
 
-    from sympy import NumberSymbol
+__all__ = (
+    'Parser',
+    'Functions',
+    'Constants',
+)
 
-__all__ = ('Parser',)
+Functions: TypeAlias = dict[str, Callable[..., Any]]
+Constants: TypeAlias = dict[str, Decimal | NumberSymbol | int]
 
 def _to_camel_case(string: str) -> str:
     """Converts identifier from snake_case to camelCase
@@ -52,8 +58,8 @@ class Parser:
     def __init__(
         self, /,
         *,
-        functions: Optional[dict[str, Callable[..., Any]]] = None,
-        constants: Optional[dict[str, Decimal | NumberSymbol | int]] = None,
+        functions: Optional[Functions] = None,
+        constants: Optional[Constants] = None,
     ) -> None:
         self.functions = {
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
@@ -73,7 +79,7 @@ class Parser:
         self._lexer: Lexer = self.lg.build()
         self._parser: LRParser = self.pg.build()
 
-    def parse(self, equation: str) -> Conditional:
+    def parse(self, equation: str) -> Conditional | DefinedFunction | Interval:
         try:
             return self._parser.parse(
                 self._lexer.lex(equation),
@@ -82,7 +88,17 @@ class Parser:
         except LexingError as e:
             pos: SourcePosition = e.getsourcepos()
             raise SyntaxError(f"Invalid token {e.message or ''} @ {pos.lineno}:{pos.colno}")
-        
+
+    @staticmethod
+    @pg.production('equation : func EQ expr', precedence='FAC')
+    def defined_function(_, p: list[Ast]) -> DefinedFunction:
+        assert isinstance(p[0], list)
+        f_name = p[0][0].getstr()
+        argument = p[0][-2].value
+
+        assert isinstance(p[-1], BinaryOp)
+        return DefinedFunction(f_name, argument, p[-1])
+
     @staticmethod
     @pg.production('equation : LBRACK expr COMMA expr RBRACK')
     @pg.production('equation : LBRACK expr COMMA expr RPAREN')
@@ -92,7 +108,7 @@ class Parser:
     def domain_interval(_, p: list[Token]) -> Interval:
         assert isinstance(p[1], Ast)
         assert isinstance(p[-2], Ast)
-        
+
         return Interval(p[0].getstr(), p[1], p[-2], p[-1].getstr())
 
     @staticmethod
@@ -149,7 +165,7 @@ class Parser:
     @pg.production('expr : expr MUL expr')
     @pg.production('expr : expr DIV expr')
     @pg.production('expr : expr MOD expr')
-    
+
     @pg.production('group : group POW group')
     def binop(_, p: list[Token], /) -> BinaryOp:
         return {
@@ -162,13 +178,20 @@ class Parser:
         }[p[1].gettokentype()](p[0], p[2])
 
     @staticmethod
-    @pg.production('group : IDENT LPAREN expr RPAREN')
+    @pg.production('func : IDENT LPAREN expr RPAREN')
 
-    @pg.production('group : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
-    @pg.production('group : IDENT SUBSCRIPT IDENT LPAREN expr RPAREN')
+    @pg.production('func : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
+    @pg.production('func : IDENT SUBSCRIPT IDENT LPAREN expr RPAREN')
 
-    @pg.production('group : IDENT SUBSCRIPT LPAREN expr RPAREN LPAREN expr RPAREN')
-    def fx(state: Parser, p: list[Ast], /) -> Function | Mul:
+    @pg.production('func : IDENT SUBSCRIPT LPAREN expr RPAREN LPAREN expr RPAREN')
+    def func(_, p: list[Ast]) -> list[Ast]:
+        return p
+
+    @staticmethod
+    @pg.production('group : func')
+    def fx(state: Parser, _p: list[list[Ast]], /) -> Function | Mul:
+        p = _p[0]
+
         assert isinstance(p[0], Token)
         ident = p[0].getstr()
 
@@ -220,7 +243,7 @@ class Parser:
     @staticmethod
     @pg.production("un : ADD group", precedence='UNOP')
     @pg.production("un : SUB group", precedence='UNOP')
-    
+
     @pg.production("expr : ADD group", precedence='UNOP')
     @pg.production("expr : SUB group", precedence='UNOP')
     def unop(_, p: list[Token], /) -> UnaryOp:
@@ -228,11 +251,11 @@ class Parser:
             'ADD': Pos,
             'SUB': Neg,
         }[p[0].gettokentype()](p[1])
-    
+
     @staticmethod
     @pg.production("un : ADD un", precedence='UNOP')
     @pg.production("un : SUB un", precedence='UNOP')
-    
+
     @pg.production("expr : ADD un", precedence='UNOP')
     @pg.production("expr : SUB un", precedence='UNOP')
     def unop_chain(_, p: list[Token], /) -> UnaryOp:

@@ -8,9 +8,9 @@ def test() -> None:
         "1 + 2x - 3x - 9x^2 - 7 = 3xyz2",
         "[-inf, x + 1)",
     )
-    
+
     for equation in equations:
         print(equation, '|', Solver(equation).parsed_equation)
 
 if __name__ == '__main__':
-    test()
+    print(Solver('f(x) + 1', functions=['f(x) = x^2']).parsed_equation)
