@@ -13,4 +13,6 @@ def test() -> None:
         print(equation, '|', Solver(equation).parsed_equation)
 
 if __name__ == '__main__':
-    print(Solver('f(x) + 1', functions=['f(x) = x^2']).parsed_equation)
+    test()
+
+    print(Solver('f(g(x)) + 1', functions=['f(x) = x^2', 'g(x) = 2x']).parsed_equation)
