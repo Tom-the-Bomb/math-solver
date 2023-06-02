@@ -1,5 +1,12 @@
 from solver import Solver
 
+__all__ = (
+    'test_parsing',
+    'test_functions',
+    'test_domain',
+    'test_properties',
+)
+
 def test_parsing() -> None:
     equations = (
         "[2y]2sin(2[x])",
@@ -9,10 +16,12 @@ def test_parsing() -> None:
         "[-inf, x + 1)",
     )
 
+    print()
     for equation in equations:
         print(equation, '|', Solver(equation).parsed_equation)
 
 def test_functions() -> None:
+    print()
     print(
         Solver(
             'ax^2 + f(2g(x)) + 2c',
@@ -22,6 +31,7 @@ def test_functions() -> None:
     )
 
 def test_domain() -> None:
+    print()
     print(
         Solver(
             'sin(x)',
@@ -31,10 +41,12 @@ def test_domain() -> None:
 
 def test_properties() -> None:
     solver = Solver('x^2 + 4x + 4')
-    print('factored:', solver.factored)
+    print('\nfactored:', solver.factored)
     print('{}: {}'.format(*tuple(solver.max_min.items())[0]))
     print('domain:', solver.domain)
     print('range:', solver.range)
+
+def _private(): print('AAA')
 
 if __name__ == '__main__':
     test_parsing()

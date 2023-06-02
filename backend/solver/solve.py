@@ -90,6 +90,14 @@ class Solver:
         with redirect_stdout(buf):
             pprint(self.solution)
         return buf.getvalue()
+    
+    @cached_property
+    def ascii_parsed_solution(self, /) -> str:
+        """(non unicode) prettified and formatted solution"""
+        buf = StringIO()
+        with redirect_stdout(buf):
+            pprint(self.solution, use_unicode=False)
+        return buf.getvalue()
 
     @cached_property
     def latex_solution(self, /) -> str:

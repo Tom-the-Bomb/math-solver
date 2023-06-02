@@ -1,9 +1,26 @@
 [project]
 name = "math-solver"
-authors = ["Tom-the-Bomb"]
+authors = [{name = "Tom-the-Bomb"}]
 version = "0.1.0"
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
+dependencies = [
+    "rply",
+    "quart",
+    "sympy",
+    "quart-schema",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = "ignore"
