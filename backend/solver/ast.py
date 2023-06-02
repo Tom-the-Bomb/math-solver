@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TypeAlias, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
-import re
 
 from sympy import (
     Symbol,
@@ -131,7 +130,7 @@ class UnaryOp(Ast):
     def __init__(self, right: Ast, /):
         self.right = right
 
-    def eval(self, /) -> Number:
+    def eval(self, /) -> Expr:
         raise NotImplementedError
 
 class Pos(UnaryOp):

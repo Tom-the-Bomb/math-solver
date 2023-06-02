@@ -91,8 +91,7 @@ class Parser:
 
     @staticmethod
     @pg.production('equation : func EQ expr')
-    def defined_function(_, p: list[Ast]) -> DefinedFunction:
-        assert isinstance(p[0], list)
+    def defined_function(_, p: list[list[Ast]]) -> DefinedFunction:
         f_name = p[0][0].getstr()
         argument = p[0][-2].value
 
@@ -237,12 +236,12 @@ class Parser:
             var = Variable(ident)
             state.variables.append(var)
             return var
-        
+
         if len(p) == 3:
             return map(Variable, [*raw[:-1], raw[-1] + f'_{p[-1].getstr()}'])
         else:
             return map(Variable, ident)
-    
+
     @pg.production('group : var POW group')
     @pg.production('group : var FAC')
     @pg.production('group : var')
@@ -260,7 +259,7 @@ class Parser:
         variables = p[0]
         if isinstance(variables, map):
             var_amt = len(variables := tuple(variables))
-    
+
             expr = Number('1')
             for i, x in enumerate(variables):
                 x: Variable

@@ -142,7 +142,7 @@ class Solver:
             return continuous_domain(self.parsed_equation.lhs, **kwargs) # type: ignore
         except (ValueError, IndexError) as e:
             raise CantGetProperty('domain') from e
-            
+
     @cached_property
     def range(self, /) -> Expression:
         try:
