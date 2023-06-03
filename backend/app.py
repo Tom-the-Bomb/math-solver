@@ -23,11 +23,12 @@ async def post_solve(data: SolveSchema) -> SolveResponse:
         functions=data.functions,
         constants=data.constants,
     )
-    
+
     return SolveResponse(
-        latex=solver.latex_solution,
-        raw=solver.ascii_parsed_solution,
-        parsed=solver.parsed_solution,
+        simplified_equation=solver.to_latex(solver.parsed_equation, evaluate_bool=False),
+        latex_solution=solver.to_latex(solver.solution),
+        raw_solution=solver.ascii_parsed_solution,
+        parsed_solution=solver.parsed_solution,
     )
 
 def run(debug: bool = False) -> None:

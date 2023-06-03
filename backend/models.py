@@ -16,6 +16,7 @@ class SolveSchema:
 
 @dataclass
 class SolveResponse:
-    latex: str
-    raw: str
-    parsed: str
+    simplified_equation: str
+    latex_solution: str
+    raw_solution: str
+    parsed_solution: str

@@ -9,6 +9,7 @@ import inspect
 
 from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
+from sympy.logic.boolalg import BooleanAtom
 from sympy import (
     E, I, pi, GoldenRatio, oo,
     functions as func_mod,
@@ -29,7 +30,7 @@ __all__ = (
 )
 
 Functions: TypeAlias = dict[str, Callable[..., Any]]
-Constants: TypeAlias = dict[str, Decimal | NumberSymbol | int]
+Constants: TypeAlias = dict[str, Decimal | NumberSymbol | int] | dict[str, float]
 
 def _to_camel_case(string: str) -> str:
     """Converts identifier from snake_case to camelCase
@@ -92,7 +93,8 @@ class Parser:
     @staticmethod
     @pg.production('equation : func EQ expr')
     def defined_function(_, p: list[list[Ast]]) -> DefinedFunction:
-        f_name = p[0][0].getstr()
+        assert isinstance(name := p[0][0], Token)
+        f_name = name.getstr()
         argument = p[0][-2].value
 
         assert isinstance(p[-1], BinaryOp)
@@ -118,18 +120,22 @@ class Parser:
     @pg.production('equation : expr LT EQ expr')
     @pg.production('equation : expr GT expr')
     @pg.production('equation : expr GT EQ expr')
-    def equation(_, p: list[Token], /) -> BinaryOp:
+    def equation(_, p: list[Token], /) -> BinaryOp | BooleanResult:
         if len(p) == 1 and isinstance(p[0], Ast):
-            return Eq(p[0], Number('0'))
+            conditional = Eq(p[0], Number('0'))
+        else:
+            conditional: Conditional = {
+                ('EQ', None): Eq,
+                ('NE', None): Ne,
+                ('LT', None): Lt,
+                ('LT', 'EQ'): Le,
+                ('GT', None): Gt,
+                ('GT', 'EQ'): Ge,
+            }[(p[1].gettokentype(), getattr(p[2], 'gettokentype', lambda: None)())](p[0], p[-1])
 
-        return {
-            ('EQ', None): Eq,
-            ('NE', None): Ne,
-            ('LT', None): Lt,
-            ('LT', 'EQ'): Le,
-            ('GT', None): Gt,
-            ('GT', 'EQ'): Ge,
-        }[(p[1].gettokentype(), getattr(p[2], 'gettokentype', lambda: None)())](p[0], p[-1])
+        if isinstance(conditional.eval(), BooleanAtom):
+            return BooleanResult(conditional)
+        return conditional
 
     @staticmethod
     @pg.production('expr : group')

@@ -46,8 +46,6 @@ def test_properties() -> None:
     print('domain:', solver.domain)
     print('range:', solver.range)
 
-def _private(): print('AAA')
-
 if __name__ == '__main__':
     test_parsing()
     test_functions()

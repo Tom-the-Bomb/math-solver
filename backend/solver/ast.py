@@ -17,16 +17,14 @@ from sympy import (
 
 from sympy.functions import factorial
 from sympy.core.basic import Basic
+from sympy.core.relational import Relational
+
 from rply.token import BaseBox
 
 if TYPE_CHECKING:
-    from sympy.core.relational import Relational
     from sympy.core.numbers import NumberSymbol
 
     from .parser import Functions
-
-    Expr: TypeAlias = Basic | Decimal | int
-    Equation: TypeAlias = Relational | bool
 
 __all__ = (
     'Ast',
@@ -54,7 +52,13 @@ __all__ = (
     'Le',
     'Gt',
     'Ge',
+    'BooleanResult',
+    'Expr',
+    'Equation',
 )
+
+Expr: TypeAlias = Basic | Decimal | int
+Equation: TypeAlias = Relational | bool
 
 class Ast(ABC, BaseBox):
     def __init__(self, value: str, /) -> None:
@@ -200,3 +204,21 @@ class Gt(Conditional):
 class Ge(Conditional):
     def eval(self, /) -> Equation:
         return S_Ge(self.left.eval(), self.right.eval())
+
+class BooleanResult(Ast):
+    def __init__(self, conditional: Conditional) -> None:
+        self.conditional = conditional
+
+    def to_latex(self, /) -> str:
+        key = {
+            Eq: '=',
+            Ne: r'\ne',
+            Gt: '>',
+            Lt: '<',
+            Ge: r'\ge',
+            Le: r'\le',
+        }[type(self.conditional)]
+        return f'{self.conditional.left.eval()}{key}{self.conditional.right.eval()}'
+
+    def eval(self, /) -> Equation:
+        return self.conditional.eval()

@@ -1,9 +1,9 @@
 from ..app import app
 
-__all__ = ('test_solve',)
+__all__ = ('test_post_solve',)
 
-async def test_solve() -> None:
-    equation = '16x^2 - 64'
+async def test_post_solve() -> None:
+    equation = '5 + 4'
 
     client = app.test_client()
     response = await client.post("/solve", json={'equation': equation})

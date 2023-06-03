@@ -18,18 +18,15 @@ from sympy import (
     solveset as s_solveset,
 )
 from sympy.calculus.util import function_range, continuous_domain
+from sympy.logic.boolalg import BooleanAtom
 
 from .parser import Parser, Constants, Functions
-from .ast import DefinedFunction
+from .ast import Ast, DefinedFunction, BooleanResult, Equation, Expr
 from .exceptions import *
 
 if TYPE_CHECKING:
-    from sympy import Set, Add, Mul, Order, Expr, Basic
-    from sympy.core.relational import Relational
+    from sympy import Set
     from sympy import Number
-
-    Expression: TypeAlias = Add | Mul | Order | Expr | Basic
-    Equation: TypeAlias = Relational | bool
 
 class Solver:
     def __init__(
@@ -43,6 +40,7 @@ class Solver:
         parser: Optional[Parser] = None,
     ) -> None:
         self.raw_equation = equation
+        self._final_ast: Optional[Ast] = None
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -60,7 +58,7 @@ class Solver:
             )
             self.parsed_equation
 
-            self._domain = Parser().parse(domain).eval() if domain else None
+            self._domain: Interval = Parser().parse(domain).eval() if domain else None
         self.solve_for = solve_for
 
         self.kwargs = {}
@@ -71,7 +69,8 @@ class Solver:
 
     @cached_property
     def parsed_equation(self, /) -> Equation | Interval | Functions:
-        return self.parser.parse(self.raw_equation).eval()
+        self._final_ast = self.parser.parse(self.raw_equation)
+        return self._final_ast.eval()
 
     @cached_property
     def solution(self, /) -> Set | list[Any]:
@@ -83,39 +82,48 @@ class Solver:
             except Exception as e2:
                 raise e from e2
 
+    def to_latex(self, expr: Expr | Equation, *, evaluate_bool: bool = True) -> str:
+        """Converts parsed expression to latex"""
+        if (
+            not evaluate_bool
+            and isinstance(expr, BooleanAtom)
+            and isinstance(a := self._final_ast, BooleanResult)
+        ):
+            return a.to_latex()
+        return s_latex(expr)
+
     @cached_property
     def parsed_solution(self, /) -> str:
         """prettified and formatted solution"""
+        if isinstance(a := self._final_ast, BooleanResult):
+            return a.to_latex()
         buf = StringIO()
         with redirect_stdout(buf):
             pprint(self.solution)
         return buf.getvalue()
-    
+
     @cached_property
     def ascii_parsed_solution(self, /) -> str:
         """(non unicode) prettified and formatted solution"""
+        if isinstance(a := self._final_ast, BooleanResult):
+            return a.to_latex()
         buf = StringIO()
         with redirect_stdout(buf):
             pprint(self.solution, use_unicode=False)
         return buf.getvalue()
 
     @cached_property
-    def latex_solution(self, /) -> str:
-        """latex solution"""
-        return s_latex(self.solution)
-
-    @cached_property
-    def factored(self, /) -> Expression:
+    def factored(self, /) -> Expr:
         """x^2 - 4 -> (x + 2)(x - 2)"""
         return factor(self.parsed_equation)
 
     @cached_property
-    def expanded(self, /) -> Expression:
+    def expanded(self, /) -> Expr:
         """(x + 1)(x + 2) -> x^2 + 3x + 2"""
         return expand(self.parsed_equation)
 
     @cached_property
-    def simplified(self, /) -> Expression:
+    def simplified(self, /) -> Expr:
         """2x + 1 + 3x + 2 -> 5x + 3"""
         return simplify(self.parsed_equation)
 
@@ -140,7 +148,7 @@ class Solver:
         return result
 
     @cached_property
-    def domain(self, /) -> Expression:
+    def domain(self, /) -> Expr:
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
@@ -152,7 +160,7 @@ class Solver:
             raise CantGetProperty('domain') from e
 
     @cached_property
-    def range(self, /) -> Expression:
+    def range(self, /) -> Expr:
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
