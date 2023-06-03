@@ -82,14 +82,10 @@ class Solver:
             except Exception as e2:
                 raise e from e2
 
-    def to_latex(self, expr: Expr | Equation, *, evaluate_bool: bool = True) -> str:
+    def to_latex(self, expr: Expr | Equation | str) -> str:
         """Converts parsed expression to latex"""
-        if (
-            not evaluate_bool
-            and isinstance(expr, BooleanAtom)
-            and isinstance(a := self._final_ast, BooleanResult)
-        ):
-            return a.to_latex()
+        if isinstance(expr, str):
+            return expr
         return s_latex(expr)
 
     @cached_property
@@ -123,8 +119,10 @@ class Solver:
         return expand(self.parsed_equation)
 
     @cached_property
-    def simplified(self, /) -> Expr:
+    def simplified(self, /) -> Expr | str:
         """2x + 1 + 3x + 2 -> 5x + 3"""
+        if isinstance(a := self._final_ast, BooleanResult):
+            return a.to_latex()
         return simplify(self.parsed_equation)
 
     @cached_property
