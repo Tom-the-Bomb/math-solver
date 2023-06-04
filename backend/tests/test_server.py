@@ -18,9 +18,9 @@ async def _request(**data) -> None:
 async def test_post_solve() -> None:
     await _request(
         json={
-            'equation': '2P(x) + 3x - 2c',
+            'equation': '2P(x) + 14x - 2c',
             'functions': ['P(x) = x^2'],
-            'constants': {'c': 2},
+            'constants': {'c': 60.0},
         }
     )
     await _request(

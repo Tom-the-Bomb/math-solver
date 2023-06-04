@@ -13,6 +13,7 @@ def test_parsing() -> None:
         "1 - 2 + -x + -3 - 4 + 5x - +0! != 7 % 2",
         "2log_2(x + 1)(y - pi) >= e",
         "1 + 2x - 3x - 9x^2 - 7 = 3xyz2",
+        'lim(2x + a, x, 0) + 1'
         "[-inf, x + 1)",
     )
 

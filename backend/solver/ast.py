@@ -114,6 +114,7 @@ class Function(Ast):
     def __init__(self, func: Callable[..., Any], /, *arguments: Ast) -> None:
         self.func = func
         self.arguments = arguments
+        print(self.arguments)
 
     def eval(self, /) -> Callable[..., Any]:
         return self.func(*[a.eval() for a in self.arguments])

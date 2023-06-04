@@ -11,6 +11,7 @@ from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
 from sympy.logic.boolalg import BooleanAtom
 from sympy import (
+    limit,
     E, I, pi, GoldenRatio, oo,
     functions as func_mod,
     NumberSymbol,
@@ -64,6 +65,7 @@ class Parser:
         constants: Optional[Constants] = None,
     ) -> None:
         self.functions = {
+            'lim': limit,
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
@@ -194,7 +196,7 @@ class Parser:
     @pg.production('arguments : arguments COMMA expr')
     def arguments_start(_, p: list[list[Ast]]) -> list[Ast]:
         assert isinstance(p[-1], Ast)
-        return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[1]]
+        return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[-1]]
 
     @pg.production('call : LPAREN RPAREN')
     @pg.production('call : LPAREN arguments RPAREN')
@@ -232,7 +234,7 @@ class Parser:
         if f := state.functions.get(ident):
             arguments = tuple(call)
             if len(p) in (4, 6) and subscript:
-                arguments = (subscript,) + arguments
+                arguments += (subscript,)
             return Function(f, *arguments)
 
         if len(p) in (4, 6) and subscript:
