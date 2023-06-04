@@ -14,22 +14,27 @@ QuartSchema(app)
 
 @app.route('/solve', methods=['POST'])
 @validate_request(SolveSchema)
-@validate_response(SolveResponse)
-async def post_solve(data: SolveSchema) -> SolveResponse:
-    solver = Solver(
-        data.equation,
-        domain=data.domain,
-        solve_for=data.solve_for,
-        functions=data.functions,
-        constants=data.constants,
-    )
+@validate_response(SolveResponse, status_code=200)
+@validate_response(Error, status_code=500)
+async def post_solve(data: SolveSchema) -> SolveResponse | Error:
+    try:
+        solver = Solver(
+            data.equation,
+            domain=data.domain,
+            solve_for=data.solve_for,
+            functions=data.functions,
+            constants=data.constants,
+        )
 
-    return SolveResponse(
-        simplified_equation=solver.to_latex(solver.simplify()),
-        latex_solution=solver.to_latex(solver.solution),
-        raw_solution=solver.ascii_parsed_solution(evaluate_bool=True),
-        parsed_solution=solver.parsed_solution(evaluate_bool=True),
-    )
+        return SolveResponse(
+            derivative=solver.to_latex(solver.derivative),
+            simplified_equation=solver.to_latex(solver.simplify()),
+            latex_solution=solver.to_latex(solver.solution),
+            raw_solution=solver.ascii_parsed_solution(evaluate_bool=True),
+            parsed_solution=solver.parsed_solution(evaluate_bool=True),
+        ), 200
+    except Exception as e:
+        return Error(error=str(e)), 500
 
 def run(debug: bool = False) -> None:
     app.run(debug=debug)

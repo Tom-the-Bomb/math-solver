@@ -4,6 +4,7 @@ from dataclasses import dataclass
 __all__ = (
     'SolveSchema',
     'SolveResponse',
+    'Error',
 )
 
 @dataclass
@@ -20,3 +21,8 @@ class SolveResponse:
     latex_solution: str
     raw_solution: str
     parsed_solution: str
+    derivative: str
+
+@dataclass
+class Error:
+    error: str

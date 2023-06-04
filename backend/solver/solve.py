@@ -11,8 +11,9 @@ from sympy import (
     Reals,
     pprint,
     Interval,
+    Derivative,
     latex as s_latex,
-    factor, expand, simplify,
+    diff, factor, expand, simplify,
     maximum, minimum,
     solve as s_solve,
     solveset as s_solveset,
@@ -69,8 +70,16 @@ class Solver:
             self.kwargs['symbol'] = self.solve_for
 
     @cached_property
+    def derivative(self, /) -> Derivative:
+        """Returns the first derivative of the function: d/dx"""
+        symbols = [self.solve_for] if self.solve_for else [v.eval() for v in self.parser.variables]
+        return diff(self.lhs_equation, *set(symbols))
+
+    @cached_property
     def lhs_equation(self, /) -> Expr:
         """Isolates all parts of the equation to the LHS <- (LHS - RHS = 0)"""
+        if isinstance(a := self._final_ast, BooleanResult):
+            return a.conditional.left.eval() - a.conditional.right.eval()
         return self.parsed_equation.lhs - self.parsed_equation.rhs
 
     @cached_property
