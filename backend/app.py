@@ -25,10 +25,10 @@ async def post_solve(data: SolveSchema) -> SolveResponse:
     )
 
     return SolveResponse(
-        simplified_equation=solver.to_latex(solver.parsed_equation),
+        simplified_equation=solver.to_latex(solver.simplify()),
         latex_solution=solver.to_latex(solver.solution),
-        raw_solution=solver.ascii_parsed_solution,
-        parsed_solution=solver.parsed_solution,
+        raw_solution=solver.ascii_parsed_solution(evaluate_bool=True),
+        parsed_solution=solver.parsed_solution(evaluate_bool=True),
     )
 
 def run(debug: bool = False) -> None:

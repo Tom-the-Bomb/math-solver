@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, Optional, Any
-from functools import cached_property
+from typing import TYPE_CHECKING, Optional, Any
+from functools import cache, cached_property
 from contextlib import redirect_stdout
 from io import StringIO
 import warnings
@@ -16,6 +16,7 @@ from sympy import (
     maximum, minimum,
     solve as s_solve,
     solveset as s_solveset,
+    Eq, Ne, Ge, Le, Gt, Lt,
 )
 from sympy.calculus.util import function_range, continuous_domain
 from sympy.logic.boolalg import BooleanAtom
@@ -68,12 +69,19 @@ class Solver:
             self.kwargs['symbol'] = self.solve_for
 
     @cached_property
+    def lhs_equation(self, /) -> Expr:
+        """Isolates all parts of the equation to the LHS <- (LHS - RHS = 0)"""
+        return self.parsed_equation.lhs - self.parsed_equation.rhs
+
+    @cached_property
     def parsed_equation(self, /) -> Equation | Interval | Functions:
+        """Returns the parsed and evaluated equation from the Lexer -> Parser -> Ast"""
         self._final_ast = self.parser.parse(self.raw_equation)
         return self._final_ast.eval()
 
     @cached_property
     def solution(self, /) -> Set | list[Any]:
+        """Returns the raw solution still represented by SymPy objectss"""
         try:
             return s_solveset(self.parsed_equation, **self.kwargs)
         except Exception as e:
@@ -88,20 +96,20 @@ class Solver:
             return expr
         return s_latex(expr)
 
-    @cached_property
-    def parsed_solution(self, /) -> str:
+    @cache
+    def parsed_solution(self, /, *, evaluate_bool: bool = False) -> str:
         """prettified and formatted solution"""
-        if isinstance(a := self._final_ast, BooleanResult):
+        if not evaluate_bool and isinstance(a := self._final_ast, BooleanResult):
             return a.to_latex()
         buf = StringIO()
         with redirect_stdout(buf):
             pprint(self.solution)
         return buf.getvalue()
 
-    @cached_property
-    def ascii_parsed_solution(self, /) -> str:
+    @cache
+    def ascii_parsed_solution(self, /, *, evaluate_bool: bool = False) -> str:
         """(non unicode) prettified and formatted solution"""
-        if isinstance(a := self._final_ast, BooleanResult):
+        if not evaluate_bool and isinstance(a := self._final_ast, BooleanResult):
             return a.to_latex()
         buf = StringIO()
         with redirect_stdout(buf):
@@ -118,15 +126,29 @@ class Solver:
         """(x + 1)(x + 2) -> x^2 + 3x + 2"""
         return expand(self.parsed_equation)
 
-    @cached_property
-    def simplified(self, /) -> Expr | str:
+    @cache
+    def simplify(self, /, *, evaluate_bool: bool = False) -> Expr | str:
         """2x + 1 + 3x + 2 -> 5x + 3"""
-        if isinstance(a := self._final_ast, BooleanResult):
+        simplified = simplify(self.parsed_equation)
+        if not evaluate_bool and isinstance(a := self._final_ast, BooleanResult):
             return a.to_latex()
-        return simplify(self.parsed_equation)
+        if not evaluate_bool and isinstance(simplified, BooleanAtom):
+            lhs = simplify(self.parsed_equation.lhs)
+            rhs = simplify(self.parsed_equation.rhs)
+            key = {
+                Eq: '=',
+                Ne: r'\ne',
+                Gt: '>',
+                Lt: '<',
+                Ge: r'\ge',
+                Le: r'\le',
+            }[type(self.parsed_equation)]
+            return f'{lhs}{key}{rhs}'
+        return simplified
 
     @cached_property
     def max_min(self, /) -> dict[str, Number]:
+        """Returns a dictionary containing the maxima and/or the minima, if exists"""
         result = {}
         kwargs = {
             'symbol': self.parser.variables[0].eval(),
@@ -134,12 +156,12 @@ class Solver:
         }
 
         try:
-            if abs(maxima := maximum(self.parsed_equation.lhs, **kwargs)) != oo: # type: ignore
+            if abs(maxima := maximum(self.lhs_equation, **kwargs)) != oo: # type: ignore
                 result['max'] = maxima
         except (ValueError, IndexError) as e:
             raise CantGetProperty('maxima') from e
         try:
-            if abs(minima := minimum(self.parsed_equation.lhs, **kwargs)) != oo: # type: ignore
+            if abs(minima := minimum(self.lhs_equation, **kwargs)) != oo: # type: ignore
                 result['min'] = minima
         except (ValueError, IndexError) as e:
             raise CantGetProperty('minima') from e
@@ -147,24 +169,26 @@ class Solver:
 
     @cached_property
     def domain(self, /) -> Expr:
+        """Returns the domain of the function"""
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
                 'domain': Reals,
                 **self.kwargs
             }
-            return continuous_domain(self.parsed_equation.lhs, **kwargs) # type: ignore
+            return continuous_domain(self.lhs_equation, **kwargs) # type: ignore
         except (ValueError, IndexError) as e:
             raise CantGetProperty('domain') from e
 
     @cached_property
     def range(self, /) -> Expr:
+        """Returns the range of the function"""
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
                 'domain': Reals,
                 **self.kwargs
             }
-            return function_range(self.parsed_equation.lhs, **kwargs) # type: ignore
+            return function_range(self.lhs_equation, **kwargs) # type: ignore
         except (ValueError, IndexError) as e:
             raise CantGetProperty('range') from e

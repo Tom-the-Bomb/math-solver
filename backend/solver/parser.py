@@ -73,7 +73,10 @@ class Parser:
             'tau': 2 * pi,
             'phi': GoldenRatio,
             'inf': oo,
-        }, **(constants or {})}
+        },
+            **({k: Decimal(str(v)) if isinstance(v, float) else v for k, v in constants.items()}
+            if constants else {})
+        }
 
         self.variables: list[Variable] = []
 

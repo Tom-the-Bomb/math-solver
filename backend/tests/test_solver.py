@@ -36,7 +36,7 @@ def test_domain() -> None:
         Solver(
             'sin(x)',
             domain='[0, 2pi]',
-        ).parsed_solution
+        ).parsed_solution()
     )
 
 def test_properties() -> None:
