@@ -194,13 +194,13 @@ class Parser:
         return p[0]
 
     @pg.production('arguments : arguments COMMA expr')
-    def arguments_start(_, p: list[list[Ast]]) -> list[Ast]:
+    def arguments(_, p: list[list[Ast]]) -> list[Ast]:
         assert isinstance(p[-1], Ast)
         return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[-1]]
 
     @pg.production('call : LPAREN RPAREN')
     @pg.production('call : LPAREN arguments RPAREN')
-    def arguments_start(_, p: list[list[Ast]]) -> list[Ast]:
+    def arguments_call(_, p: list[list[Ast]]) -> list[Ast]:
         return p[1] if len(p) == 3 else []
 
     @staticmethod
@@ -258,7 +258,7 @@ class Parser:
             ident += f'_{p[-1].getstr()}'
 
         if x := state.constants.get(ident):
-            return Constant(x)
+            return Constant(ident, x)
 
         raw = p[0].getstr()
         if len(ident) == 1 or len(raw) == 1:
@@ -293,7 +293,7 @@ class Parser:
             for i, x in enumerate(variables):
                 x: Variable
                 if con := state.constants.get(x.value):
-                    sym = Constant(con)
+                    sym = Constant(x.value, con)
                 else:
                     sym = x
                     state.variables.append(sym)

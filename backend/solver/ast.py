@@ -96,9 +96,10 @@ class DefinedFunction(Ast):
         if self.arguments and isinstance(raw_function, Basic):
             def f(*args) -> Expr:
                 nonlocal raw_function
-
                 for arg_name, arg_val in zip(self.arguments, args):
                     if name := getattr(arg_name, 'value', None):
+                        if isinstance(arg_name, Constant):
+                            name = arg_name.ident
                         raw_function = raw_function.subs(Symbol(name), arg_val)
                     else:
                         raise InvalidFunctionArgument()
@@ -114,13 +115,13 @@ class Function(Ast):
     def __init__(self, func: Callable[..., Any], /, *arguments: Ast) -> None:
         self.func = func
         self.arguments = arguments
-        print(self.arguments)
 
     def eval(self, /) -> Callable[..., Any]:
         return self.func(*[a.eval() for a in self.arguments])
 
 class Constant(Ast):
-    def __init__(self, value: NumberSymbol | Decimal | int, /) -> None:
+    def __init__(self, ident: str, value: NumberSymbol | Decimal | int, /) -> None:
+        self.ident = ident
         self.value = value
 
     def eval(self, /) -> NumberSymbol | Decimal | int:
