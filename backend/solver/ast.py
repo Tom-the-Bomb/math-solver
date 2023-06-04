@@ -21,6 +21,8 @@ from sympy.core.relational import Relational
 
 from rply.token import BaseBox
 
+from .exceptions import *
+
 if TYPE_CHECKING:
     from sympy.core.numbers import NumberSymbol
 
@@ -83,18 +85,27 @@ class Interval(Ast):
         }[self.brackets](self.a.eval(), self.b.eval())
 
 class DefinedFunction(Ast):
-    def __init__(self, f_name: str, argument: Optional[str], expression: BinaryOp) -> None:
+    def __init__(self, f_name: str, arguments: list[Ast], expression: BinaryOp) -> None:
         self.f_name = f_name
-        self.argument = argument
+        self.arguments = arguments
         self.expression = expression
 
     def eval(self, /) -> Functions:
         raw_function = self.expression.eval()
 
-        if self.argument and isinstance(raw_function, Basic):
-            function = lambda arg: raw_function.subs(Symbol(self.argument), arg)
-        elif self.argument:
-            function = lambda _: raw_function
+        if self.arguments and isinstance(raw_function, Basic):
+            def f(*args) -> Expr:
+                nonlocal raw_function
+
+                for arg_name, arg_val in zip(self.arguments, args):
+                    if name := getattr(arg_name, 'value', None):
+                        raw_function = raw_function.subs(Symbol(name), arg_val)
+                    else:
+                        raise InvalidFunctionArgument()
+                return raw_function
+            function = f
+        elif self.arguments:
+            function = lambda *_: raw_function
         else:
             function = lambda: raw_function
         return {self.f_name: function}

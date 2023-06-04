@@ -24,8 +24,8 @@ def test_functions() -> None:
     print()
     print(
         Solver(
-            'ax^2 + f(2g(x)) + 2c',
-            functions=['f(x) = 2cx!', 'g(x) = 2x'],
+            'ax^2 + f(2g(x)) + 2c - h()',
+            functions=['f(x) = 2cx!', 'g(x) = 2x', 'h() = 7(1)'],
             constants={'c': 5},
         ).parsed_equation
     )

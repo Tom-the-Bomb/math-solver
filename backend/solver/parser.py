@@ -17,6 +17,7 @@ from sympy import (
 )
 
 from .lexer import LexerGenerator
+from .exceptions import *
 from .ast import *
 
 if TYPE_CHECKING:
@@ -98,10 +99,10 @@ class Parser:
     def defined_function(_, p: list[list[Ast]]) -> DefinedFunction:
         assert isinstance(name := p[0][0], Token)
         f_name = name.getstr()
-        argument = p[0][-2].value
+        arguments: list[Ast] = p[0][-1] if isinstance(p[0][-1], list) else [p[0][-1]]
 
         assert isinstance(p[-1], BinaryOp)
-        return DefinedFunction(f_name, argument, p[-1])
+        return DefinedFunction(f_name, arguments, p[-1])
 
     @staticmethod
     @pg.production('equation : LBRACK expr COMMA expr RBRACK')
@@ -186,13 +187,27 @@ class Parser:
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
 
+    @pg.production('arguments : expr')
+    def arguments_start(_, p: list[Ast]) -> Ast:
+        return p[0]
+
+    @pg.production('arguments : arguments COMMA expr')
+    def arguments_start(_, p: list[list[Ast]]) -> list[Ast]:
+        assert isinstance(p[-1], Ast)
+        return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[1]]
+
+    @pg.production('call : LPAREN RPAREN')
+    @pg.production('call : LPAREN arguments RPAREN')
+    def arguments_start(_, p: list[list[Ast]]) -> list[Ast]:
+        return p[1] if len(p) == 3 else []
+
     @staticmethod
-    @pg.production('func : IDENT LPAREN expr RPAREN')
+    @pg.production('func : IDENT call')
 
-    @pg.production('func : IDENT SUBSCRIPT NUMBER LPAREN expr RPAREN')
-    @pg.production('func : IDENT SUBSCRIPT IDENT LPAREN expr RPAREN')
+    @pg.production('func : IDENT SUBSCRIPT NUMBER call')
+    @pg.production('func : IDENT SUBSCRIPT IDENT call')
 
-    @pg.production('func : IDENT SUBSCRIPT LPAREN expr RPAREN LPAREN expr RPAREN')
+    @pg.production('func : IDENT SUBSCRIPT LPAREN expr RPAREN call')
     def func(_, p: list[Ast]) -> list[Ast]:
         return p
 
@@ -200,33 +215,36 @@ class Parser:
     @pg.production('group : func')
     def fx(state: Parser, _p: list[list[Ast]], /) -> Function | Mul:
         p = _p[0]
+        call = p[-1] if isinstance(p[-1], list) else [p[-1]]
 
         assert isinstance(p[0], Token)
         ident = p[0].getstr()
 
         subscript = None
-        if len(p) == 8:
+        if len(p) == 6:
             subscript = p[3]
-        elif len(p) == 6 and isinstance(tok := p[2], Token):
+        elif len(p) == 4 and isinstance(tok := p[2], Token):
             subscript = {
                 'NUMBER': Parser.number,
                 'IDENT': Parser.variable,
             }[tok.gettokentype()](state, [tok])
 
         if f := state.functions.get(ident):
-            arguments = (p[-2],)
-            if len(p) in (6, 8) and subscript:
+            arguments = tuple(call)
+            if len(p) in (4, 6) and subscript:
                 arguments = (subscript,) + arguments
             return Function(f, *arguments)
 
-        if len(p) in (6, 8) and subscript:
+        if len(p) in (4, 6) and subscript:
             ident += f'_{subscript.eval()}'
+        if len(call) > 1:
+            raise InvalidFunctionCall(ident)
         return Mul(
             Parser.multi_var(
                 state,
                 [Parser.variable(state, [p[0]])],
             ),
-            p[-2],
+            p[-1],
         )
 
     @staticmethod
