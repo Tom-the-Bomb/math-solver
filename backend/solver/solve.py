@@ -28,8 +28,7 @@ from .ast import Ast, DefinedFunction, BooleanResult, Equation, Expr
 from .exceptions import *
 
 if TYPE_CHECKING:
-    from sympy import Set
-    from sympy import Number
+    from sympy import Set, Number
 
 class BooleanComp:
     def __init__(self, lhs: Expr, typ: Relational, rhs: Expr, /) -> None:
