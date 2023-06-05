@@ -222,16 +222,39 @@ class BooleanResult(Ast):
     def __init__(self, conditional: Conditional) -> None:
         self.conditional = conditional
 
+    def __repr__(self, /) -> str:
+        return f"<{self.__class__.__name__} '{self.to_latex()}'>"
+
     def to_latex(self, /) -> str:
+        name = self.conditional.__class__.__name__
         key = {
-            Eq: '=',
-            Ne: r'\ne',
-            Gt: '>',
-            Lt: '<',
-            Ge: r'\ge',
-            Le: r'\le',
-        }[type(self.conditional)]
-        return f'{self.conditional.left.eval()}{key}{self.conditional.right.eval()}'
+            'Eq': '=',
+            'Ne': r'\ne',
+            'Gt': '>',
+            'Lt': '<',
+            'Ge': r'\ge',
+            'Le': r'\le',
+        }.get(name, name)
+        return f'{self.lhs}{key}{self.rhs}'
+
+    @property
+    def sympy_conditional(self, /) -> Relational:
+        return {
+            'Eq': S_Eq,
+            'Ne': S_Ne,
+            'Ge': S_Ge,
+            'Le': S_Le,
+            'Gt': S_Gt,
+            'Lt': S_Lt,
+        }.get(self.conditional.__class__.__name__, self.conditional)
+
+    @property
+    def lhs(self, /) -> Expr:
+        return self.conditional.left.eval()
+
+    @property
+    def rhs(self, /) -> Expr:
+        return self.conditional.right.eval()
 
     def eval(self, /) -> Equation:
         return self.conditional.eval()

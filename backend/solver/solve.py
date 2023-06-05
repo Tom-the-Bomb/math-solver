@@ -20,6 +20,7 @@ from sympy import (
     Eq, Ne, Ge, Le, Gt, Lt,
 )
 from sympy.calculus.util import function_range, continuous_domain
+from sympy.core.relational import Relational
 from sympy.logic.boolalg import BooleanAtom
 
 from .parser import Parser, Constants, Functions
@@ -29,6 +30,26 @@ from .exceptions import *
 if TYPE_CHECKING:
     from sympy import Set
     from sympy import Number
+
+class BooleanComp:
+    def __init__(self, lhs: Expr, typ: Relational, rhs: Expr, /) -> None:
+        self.lhs = lhs
+        self.typ = typ
+        self.rhs = rhs
+
+    def __repr__(self, /) -> str:
+        return f"<{self.__class__.__name__} '{self.to_latex()}'>"
+
+    def to_latex(self, /) -> str:
+        key = {
+            Eq: '=',
+            Ne: r'\ne',
+            Gt: '>',
+            Lt: '<',
+            Ge: r'\ge',
+            Le: r'\le',
+        }.get(self.typ, self.typ.__name__)
+        return f'{self.lhs}{key}{self.rhs}'
 
 class Solver:
     def __init__(
@@ -99,10 +120,10 @@ class Solver:
             except Exception as e2:
                 raise e from e2
 
-    def to_latex(self, expr: Expr | Equation | str) -> str:
+    def to_latex(self, expr: Expr | Equation | BooleanComp) -> str:
         """Converts parsed expression to latex"""
-        if isinstance(expr, str):
-            return expr
+        if hasattr(expr, 'to_latex'):
+            return expr.to_latex()
         return s_latex(expr)
 
     @cache
@@ -136,23 +157,15 @@ class Solver:
         return expand(self.parsed_equation)
 
     @cache
-    def simplify(self, /, *, evaluate_bool: bool = False) -> Expr | str:
+    def simplify(self, /, *, evaluate_bool: bool = False) -> Expr | BooleanComp:
         """2x + 1 + 3x + 2 -> 5x + 3"""
         simplified = simplify(self.parsed_equation)
         if not evaluate_bool and isinstance(a := self._final_ast, BooleanResult):
-            return a.to_latex()
+            return BooleanComp(a.lhs, a.sympy_conditional, a.rhs)
         if not evaluate_bool and isinstance(simplified, BooleanAtom):
             lhs = simplify(self.parsed_equation.lhs)
             rhs = simplify(self.parsed_equation.rhs)
-            key = {
-                Eq: '=',
-                Ne: r'\ne',
-                Gt: '>',
-                Lt: '<',
-                Ge: r'\ge',
-                Le: r'\le',
-            }[type(self.parsed_equation)]
-            return f'{lhs}{key}{rhs}'
+            return BooleanComp(lhs, type(self.parsed_equation), rhs)
         return simplified
 
     @cached_property
