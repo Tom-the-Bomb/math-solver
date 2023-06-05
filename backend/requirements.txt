@@ -1,3 +1,4 @@
+quart-rate-limiter
 quart-schema
 sympy
 quart

@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from quart import Quart
+from quart_rate_limiter import RateLimiter, rate_limit
 from quart_schema import (
     QuartSchema,
     validate_request,
@@ -10,12 +13,14 @@ from .solver import Solver
 from .models import *
 
 app = Quart(__name__)
+RateLimiter(app)
 QuartSchema(app)
 
 @app.route('/solve', methods=['POST'])
 @validate_request(SolveSchema)
 @validate_response(SolveResponse, status_code=200)
 @validate_response(Error, status_code=500)
+@rate_limit(3, timedelta(seconds=10))
 async def post_solve(data: SolveSchema) -> SolveResponse | Error:
     try:
         solver = Solver(

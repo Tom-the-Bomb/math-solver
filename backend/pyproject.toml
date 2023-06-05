@@ -9,6 +9,7 @@ dependencies = [
     "quart",
     "sympy",
     "quart-schema",
+    "quart-rate-limiter",
 ]
 
 [project.optional-dependencies]
