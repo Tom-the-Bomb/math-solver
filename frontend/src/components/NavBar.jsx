@@ -1,8 +1,10 @@
 export default function NavBar(props) {
     return (
-        <nav className="bg-black text-center p-8">
+        <nav className="bg-rose-900 font-serif text-center p-6">
             <h1 className="text-3xl text-white">
-                Math-solver
+                Math <span className="text-gray-300 text-2xl font-mono">
+                    &lt;Solver&gt;
+                </span>
             </h1>
         </nav>
     )
