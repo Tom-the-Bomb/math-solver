@@ -1,10 +1,13 @@
-function Input({placeholder}) {
+
+import FunctionsList from "./functionsList";
+
+function Input({placeholder, height}) {
     return (
         <textarea
-            className="font-serif w-full placeholder:italic placeholder:text-slate-400
-            bg-white border border-slate-300
-            py-2 pl-3 pr-3 shadow-sm focus:outline-none
-            focus:border-sky-500 focus:ring-sky-500 focus:ring-1 sm:text-sm"
+            className={
+                `block ${height} w-full resize-none font-serif
+                my-input text-lg`
+            }
             placeholder={placeholder}
             type="text"
             name="search"
@@ -22,23 +25,32 @@ function Form() {
     }
 
     return (
-        <form className="w-full" onSubmit={handleSubmit}>
-            <label class="relative block">
-            <span class="sr-only">Search</span>
-            <Input placeholder={"Enter an equation..."}></Input>
-            </label>
+        <form className="flex flex-col h-full w-full justify-between" onSubmit={handleSubmit}>
+            <FunctionsList></FunctionsList>
+            <div className="h-[50%] w-full self-end inline-block relative">
+                <span class="sr-only">Search</span>
+                <Input
+                    placeholder={"Enter an equation..."}
+                    height={"h-full"}>
+                </Input>
+                <button
+                    className="my-focus my-hover text-gray-100 bg-green-500
+                    rounded-lg p-3 absolute bottom-[5%] right-8"
+                    type="submit"
+                >Enter</button>
+            </div>
         </form>
     )
 }
 
-export default function Main(props) {
+export default function Main() {
     return (
         <main className="grow grid grid-cols-2">
-            <div className="bg-red-1 drop-shadow-2xl flex flex-column items-center">
+            <div className="bg-red-1 drop-shadow-2xl">
                 <Form></Form>
             </div>
             <div className="bg-red-2">
-                
+
             </div>
         </main>
     )
