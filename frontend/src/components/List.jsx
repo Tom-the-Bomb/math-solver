@@ -1,8 +1,11 @@
 import { useState } from 'react';
 
-function Input({name, placeholder, width}) {
+function Input({class_, placeholder, width}) {
     return (
-        <input name={name} className={`font-math rounded-md text-s my-input h-12 ${width}`} type="text" placeholder={placeholder}></input>
+        <input
+            className={`${class_} font-math rounded-md text-s my-input h-12 ${width}`}
+            type="text" placeholder={placeholder}
+        />
     )
 }
 
@@ -18,11 +21,11 @@ function Fx({type, id, funcs, setter}) {
     return (
         <div className="flex flex-row gap-4">
             {type === "Functions"
-                ? <Input name="a-function" placeholder="E.g. f(x) = 2x ..." width="w-1/2"></Input>
+                ? <Input class_="a-function" placeholder="E.g. f(x) = 2x ..." width="w-1/2"></Input>
                 : <div className="flex flex-row gap-4 max-w-fit">
-                    <Input name="constant-name" width="w-1/3"placeholder="name"></Input>
+                    <Input class_="constant-name" width="w-1/3"placeholder="name"></Input>
                     <span className="text-rose-100 bold text-xl self-center">=</span>
-                    <Input name="constant-value" width="w-1/3" placeholder="value"></Input>
+                    <Input class_="constant-value" width="w-1/3" placeholder="value"></Input>
                     {deleteBtn}
                 </div>
             }
@@ -48,7 +51,7 @@ export default function List({type}) {
                     <Fx type={type} id={id} key={id} funcs={funcs} setter={(x) => setFunctions(x) }/>
                 )
             })}
-            <button className="flex justify-center w-[50%] p-2 rounded-md bg-red-800" type="button" onClick={add}>
+            <button className="flex justify-center w-1/2 p-2 rounded-md bg-red-800" type="button" onClick={add}>
                 <img alt="+" src={process.env.PUBLIC_URL + "/assets/plus.svg"}/>
             </button>
         </div>

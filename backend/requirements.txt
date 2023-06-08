@@ -1,5 +1,6 @@
 quart-rate-limiter
 quart-schema
+quart-cors
 sympy
 quart
 rply

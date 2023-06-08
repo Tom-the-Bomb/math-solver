@@ -8,6 +8,7 @@ dependencies = [
     "rply",
     "quart",
     "sympy",
+    "quart-cors",
     "quart-schema",
     "quart-rate-limiter",
 ]

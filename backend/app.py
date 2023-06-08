@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from quart import Quart
+from quart_cors import cors
 from quart_rate_limiter import RateLimiter, rate_limit
 from quart_schema import (
     QuartSchema,
@@ -13,6 +14,7 @@ from .solver import Solver
 from .models import *
 
 app = Quart(__name__)
+cors(app, allow_origin="http://localhost:3000")
 RateLimiter(app)
 QuartSchema(app)
 

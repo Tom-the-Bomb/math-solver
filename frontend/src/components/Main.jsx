@@ -1,6 +1,8 @@
+import { useState } from "react";
 import List from "./List";
+import Output from "./Output";
 
-function Input({placeholder, height}) {
+function Textarea({name, placeholder, height}) {
     return (
         <textarea
             className={
@@ -9,7 +11,7 @@ function Input({placeholder, height}) {
             }
             placeholder={placeholder}
             type="text"
-            name="equation"
+            name={name}
             spellCheck="false"
             autoCorrect="false"
             autoCapitalize="false"
@@ -18,32 +20,52 @@ function Input({placeholder, height}) {
     )
 }
 
-function Form() {
-    function handleSubmit(event) {
+function Form({host, setResponse}) {
+    async function handleSubmit(event) {
         event.preventDefault();
 
         const elements = event.target.elements;
+        const domain = elements.domain.value;
         const equation = elements.equation.value;
-        
-        const arr = Array(elements);
-        const functions = arr
-            .map(x => {
-                console.log('AAA', x)
-                console.log('BBB', x.name)
-            });
-        
-        //console.log(functions);
-        console.log(equation);
-        /*
-        fetch(
-            'localhost:5000/solve', {
-                method: 'POST',
-                mode: 'cors',
-                body: JSON.stringify({
 
-                })
+        const elementList = Array.from(elements);
+        const functions = elementList
+            .filter(x => x.classList.contains("a-function"));
+        const constants = Object.fromEntries(
+            elementList
+                .filter(x => x.classList.contains("constant-name"))
+                .map(x => [x, elementList[elementList.indexOf(x) + 1]])
+        );
+
+        const response = await fetch(
+            `${host}/solve`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    'equation': equation,
+                    'domain': domain,
+                    'functions': functions,
+                    'constants': constants,
+                }),
             }
-        )*/
+        );
+
+        let content;
+        try {
+            content = await response.json();
+        } catch {
+            content = {
+                error: await response.text()
+            }
+        }
+
+        setResponse({
+            status: response.status,
+            ok: response.ok,
+            content: content,
+        });
     }
 
     return (
@@ -53,11 +75,17 @@ function Form() {
                 <List type="Constants"></List>
             </div>
             <div className="h-1/2 w-full self-end inline-block relative">
-                <span class="sr-only">Search</span>
-                <Input
+                <Textarea
+                    name="domain"
+                    placeholder={"Domain: e.g. [0, inf)"}
+                    height={"h-[15%]"}>
+                </Textarea>
+                <span class="sr-only">Equation</span>
+                <Textarea
+                    name="equation"
                     placeholder={"Enter an equation..."}
-                    height={"h-full"}>
-                </Input>
+                    height={"h-[85%]"}>
+                </Textarea>
                 <button
                     className="my-focus my-hover text-gray-100 bg-green-500
                     rounded-lg p-3 absolute bottom-[5%] right-8"
@@ -68,14 +96,17 @@ function Form() {
     )
 }
 
-export default function Main() {
+export default function Main({host}) {
+    const [ response, setResponse ] = useState(null);
+
     return (
         <main className="grow grid grid-cols-2 flex-wrap">
             <div className="bg-red-1 drop-shadow-2xl">
-                <Form></Form>
+                <Form setResponse={(x) => setResponse(x)} host={host}></Form>
             </div>
             <div className="bg-red-2 p-10">
                 <h1 className="my-h1">Output</h1>
+                <Output response={response}></Output>
             </div>
         </main>
     )
