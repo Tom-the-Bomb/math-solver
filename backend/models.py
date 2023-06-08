@@ -17,6 +17,9 @@ class SolveSchema:
 
 @dataclass
 class SolveResponse:
+    domain: str
+    range: str
+    equation: str
     simplified_equation: str
     latex_solution: str
     raw_solution: str

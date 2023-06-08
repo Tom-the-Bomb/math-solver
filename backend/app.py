@@ -12,6 +12,7 @@ from quart_schema import (
 from .solver import Solver
 
 from .models import *
+from .solver.exceptions import CantGetProperty
 
 app = Quart(__name__)
 cors(app, allow_origin="http://localhost:3000")
@@ -22,7 +23,7 @@ QuartSchema(app)
 @validate_request(SolveSchema)
 @validate_response(SolveResponse, status_code=200)
 @validate_response(Error, status_code=500)
-@rate_limit(3, timedelta(seconds=10))
+@rate_limit(3, timedelta(seconds=5))
 async def post_solve(data: SolveSchema) -> SolveResponse | Error:
     try:
         solver = Solver(
@@ -32,8 +33,18 @@ async def post_solve(data: SolveSchema) -> SolveResponse | Error:
             functions=data.functions,
             constants=data.constants,
         )
-
+        try:
+            domain = solver.to_latex(solver.domain)
+        except CantGetProperty:
+            domain = r'\emptyset'
+        try:
+            range = solver.to_latex(solver.range)
+        except CantGetProperty:
+            range = r'\emptyset'
         return SolveResponse(
+            domain=domain,
+            range=range,
+            equation=solver.to_latex(solver.parsed_equation),
             derivative=solver.to_latex(solver.derivative),
             simplified_equation=solver.to_latex(solver.simplify()),
             latex_solution=solver.to_latex(solver.solution),

@@ -11,6 +11,7 @@ from sympy import (
     Reals,
     pprint,
     Interval,
+    Symbol,
     Derivative,
     latex as s_latex,
     diff, factor, expand, simplify,
@@ -70,7 +71,7 @@ class Solver:
             parsed_functions = {}
             if functions:
                 for f in functions:
-                    parsed = Parser(constants=constants).parse(f)
+                    parsed = Parser(constants=constants, is_parsing_function=True).parse(f)
                     if not isinstance(parsed, DefinedFunction):
                         raise NotAFunction(f)
                     parsed_functions.update(parsed.eval())
@@ -86,8 +87,8 @@ class Solver:
         self.kwargs = {}
         if self._domain is not None:
             self.kwargs['domain'] = self._domain
-        if self.solve_for:
-            self.kwargs['symbol'] = self.solve_for
+        if self.solve_for is not None:
+            self.kwargs['symbol'] = Symbol(self.solve_for)
 
     @cached_property
     def derivative(self, /) -> Derivative:
@@ -198,8 +199,8 @@ class Solver:
                 **self.kwargs
             }
             return continuous_domain(self.lhs_equation, **kwargs) # type: ignore
-        except (ValueError, IndexError) as e:
-            raise CantGetProperty('domain') from e
+        except Exception as e:
+            raise CantGetProperty('domain', e) from e
 
     @cached_property
     def range(self, /) -> Expr:
@@ -211,5 +212,5 @@ class Solver:
                 **self.kwargs
             }
             return function_range(self.lhs_equation, **kwargs) # type: ignore
-        except (ValueError, IndexError) as e:
-            raise CantGetProperty('range') from e
+        except Exception as e:
+            raise CantGetProperty('range', e) from e

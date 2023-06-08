@@ -1,10 +1,11 @@
 import { useState } from 'react';
 
-function Input({class_, placeholder, width}) {
+export function Input({name, type, class_, placeholder, width}) {
     return (
         <input
+            name={name}
             className={`${class_} font-math rounded-md text-s my-input h-12 ${width}`}
-            type="text" placeholder={placeholder}
+            type={type ? type : "text"} placeholder={placeholder}
         />
     )
 }
@@ -23,9 +24,9 @@ function Fx({type, id, funcs, setter}) {
             {type === "Functions"
                 ? <Input class_="a-function" placeholder="E.g. f(x) = 2x ..." width="w-1/2"></Input>
                 : <div className="flex flex-row gap-4 max-w-fit">
-                    <Input class_="constant-name" width="w-1/3"placeholder="name"></Input>
+                    <Input class_="constant-name" width="w-1/3" placeholder="name"></Input>
                     <span className="text-rose-100 bold text-xl self-center">=</span>
-                    <Input class_="constant-value" width="w-1/3" placeholder="value"></Input>
+                    <Input type="number" class_="constant-value" width="w-1/3" placeholder="value"></Input>
                     {deleteBtn}
                 </div>
             }
@@ -34,7 +35,7 @@ function Fx({type, id, funcs, setter}) {
     )
 }
 
-export default function List({type}) {
+export function List({type}) {
     let list = [];
     const [ funcs, setFunctions ] = useState(list);
 

@@ -23,5 +23,5 @@ class NotAFunction(SolverException):
         super().__init__(f'Invalid function syntax: {provided}\nCorrect Ex: f(x) = x^2')
 
 class CantGetProperty(SolverException):
-    def __init__(self, property: str, /) -> None:
-        super().__init__(f'Unable to retrieve <{property}> from provided function / expression')
+    def __init__(self, property: str, error: Exception, /) -> None:
+        super().__init__(f'Unable to retrieve <{property}> from provided function / expression:\n{error}')

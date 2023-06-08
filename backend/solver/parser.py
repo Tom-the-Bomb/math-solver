@@ -61,9 +61,11 @@ class Parser:
     def __init__(
         self, /,
         *,
+        is_parsing_function: Optional[bool] = False,
         functions: Optional[Functions] = None,
         constants: Optional[Constants] = None,
     ) -> None:
+        self.is_parsing_function = is_parsing_function
         self.functions = {
             'lim': limit,
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
@@ -98,13 +100,17 @@ class Parser:
 
     @staticmethod
     @pg.production('equation : func EQ expr')
-    def defined_function(_, p: list[list[Ast]]) -> DefinedFunction:
+    def defined_function(state: Parser, p: list[list[Ast]]) -> DefinedFunction:
         assert isinstance(name := p[0][0], Token)
+        assert isinstance(expr := p[-1], Ast)
+
+        if not state.is_parsing_function:
+            func = Parser.fx(state, [p[0]])
+            return Parser.equation(state, [func, *p[1:]])
+
         f_name = name.getstr()
         arguments: list[Ast] = p[0][-1] if isinstance(p[0][-1], list) else [p[0][-1]]
-
-        assert isinstance(p[-1], BinaryOp)
-        return DefinedFunction(f_name, arguments, p[-1])
+        return DefinedFunction(f_name, arguments, expr)
 
     @staticmethod
     @pg.production('equation : LBRACK expr COMMA expr RBRACK')

@@ -85,7 +85,7 @@ class Interval(Ast):
         }[self.brackets](self.a.eval(), self.b.eval())
 
 class DefinedFunction(Ast):
-    def __init__(self, f_name: str, arguments: list[Ast], expression: BinaryOp) -> None:
+    def __init__(self, f_name: str, arguments: list[Ast], expression: Ast) -> None:
         self.f_name = f_name
         self.arguments = arguments
         self.expression = expression
