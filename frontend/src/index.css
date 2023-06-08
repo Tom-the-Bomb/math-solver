@@ -22,4 +22,8 @@
             focus:ring-1 sm:text-sm
         ;
     }
+
+    .my-h1 {
+        @apply text-white font-sans font-bold text-2xl
+    }
 }

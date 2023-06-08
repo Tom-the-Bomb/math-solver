@@ -1,16 +1,15 @@
-
-import FunctionsList from "./functionsList";
+import List from "./List";
 
 function Input({placeholder, height}) {
     return (
         <textarea
             className={
                 `block ${height} w-full resize-none font-serif
-                my-input text-lg`
+                my-input text-lg  border-t-2 border-red-900`
             }
             placeholder={placeholder}
             type="text"
-            name="search"
+            name="equation"
             spellCheck="false"
             autoCorrect="false"
             autoCapitalize="false"
@@ -21,13 +20,39 @@ function Input({placeholder, height}) {
 
 function Form() {
     function handleSubmit(event) {
-        event.preventDefault()
+        event.preventDefault();
+
+        const elements = event.target.elements;
+        const equation = elements.equation.value;
+        
+        const arr = Array(elements);
+        const functions = arr
+            .map(x => {
+                console.log('AAA', x)
+                console.log('BBB', x.name)
+            });
+        
+        //console.log(functions);
+        console.log(equation);
+        /*
+        fetch(
+            'localhost:5000/solve', {
+                method: 'POST',
+                mode: 'cors',
+                body: JSON.stringify({
+
+                })
+            }
+        )*/
     }
 
     return (
         <form className="flex flex-col h-full w-full justify-between" onSubmit={handleSubmit}>
-            <FunctionsList></FunctionsList>
-            <div className="h-[50%] w-full self-end inline-block relative">
+            <div className="flex flex-col gap-10 p-10 overflow-y-auto">
+                <List type="Functions"></List>
+                <List type="Constants"></List>
+            </div>
+            <div className="h-1/2 w-full self-end inline-block relative">
                 <span class="sr-only">Search</span>
                 <Input
                     placeholder={"Enter an equation..."}
@@ -45,12 +70,12 @@ function Form() {
 
 export default function Main() {
     return (
-        <main className="grow grid grid-cols-2">
+        <main className="grow grid grid-cols-2 flex-wrap">
             <div className="bg-red-1 drop-shadow-2xl">
                 <Form></Form>
             </div>
-            <div className="bg-red-2">
-
+            <div className="bg-red-2 p-10">
+                <h1 className="my-h1">Output</h1>
             </div>
         </main>
     )
