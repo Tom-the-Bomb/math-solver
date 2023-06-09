@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { List, Input } from "./List";
 import Output from "./Output";
+import { MathJax } from "better-react-mathjax";
 
-function Textarea({name, required, placeholder, height}) {
+function Textarea({onChange, name, required, placeholder, height}) {
     return (
         <textarea
+            onChange={onChange}
             className={
                 `scrollbar-gray block ${height} w-full resize-none font-serif overflow-y-auto
-                my-input text-lg  border-t-2 border-red-900`
+                my-input text-lg border-t-2 border-red-900`
             }
             placeholder={placeholder}
             type="text"
@@ -97,9 +99,10 @@ function Form({host, setResponse}) {
         }
     }
 
+    const [ rendered, setRendered ] = useState(null);
     return (
         <form className="flex flex-col h-full w-full justify-between" onSubmit={handleSubmit}>
-            <div className="scrollbar-red flex flex-col gap-10 h-1/2 p-10 overflow-y-auto">
+            <div className="scrollbar-red flex flex-col gap-10 h-1/2 pt-5 p-10 overflow-y-auto">
                 <List type="Functions"></List>
                 <List type="Constants"></List>
                 <Input name="solveFor" width="w-1/2" placeholder="Isolate for :"></Input>
@@ -108,16 +111,25 @@ function Form({host, setResponse}) {
                 <Textarea
                     required={false}
                     name="domain"
-                    placeholder={"Domain: e.g. [0, inf)"}
-                    height={"h-[15%]"}>
+                    placeholder="Domain: e.g. [0, inf)"
+                    height="h-[15%]">
                 </Textarea>
                 <span class="sr-only">Equation</span>
-                <Textarea
-                    required={true}
-                    name="equation"
-                    placeholder={"Enter an equation..."}
-                    height={"h-[85%]"}>
-                </Textarea>
+                <div className="flex flex-col h-[85%]">
+                    <MathJax className="border-t-2 border-red-900 my-input">
+                        {rendered
+                            ? rendered
+                            : <div className="text-slate-400 font-math italic">Latex equation</div>
+                        }
+                    </MathJax>
+                    <Textarea
+                        onChange={(e) => setRendered(e.target.value ? "`" + e.target.value + "`" : null)}
+                        required={true}
+                        name="equation"
+                        placeholder="Enter an equation..."
+                        height="grow">
+                    </Textarea>
+                </div>
                 <button
                     className="my-focus my-hover text-gray-100 bg-green-500
                     rounded-lg p-3 absolute bottom-[5%] right-8"
@@ -132,11 +144,11 @@ export default function Main({host}) {
     const [ response, setResponse ] = useState(null);
 
     return (
-        <main className="grow grid grid-cols-2 flex-wrap">
-            <div className="bg-red-1 drop-shadow-2xl">
+        <main className="flex flex-row flex-wrap grow">
+            <div className="bg-red-1 lg:w-1/2 grow drop-shadow-2xl">
                 <Form setResponse={(x) => setResponse(x)} host={host}></Form>
             </div>
-            <div className="bg-red-2 p-10">
+            <div className="bg-red-2 lg:w-1/2 grow p-10">
                 <h1 className="text-4xl my-h1">Output</h1>
                 <Output response={response}></Output>
             </div>

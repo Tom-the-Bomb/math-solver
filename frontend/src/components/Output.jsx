@@ -6,7 +6,7 @@ function Latex({content}) {
     const container = useRef();
 
     useEffect(() => {
-        katex.render(content, container.current);
+        katex.render(content, container.current, { throwOnError: false });
     }, [content]);
 
     return <div ref={container} />
