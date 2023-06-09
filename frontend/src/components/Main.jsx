@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { List, Input } from "./List";
 import Output from "./Output";
+import { useState } from "react";
+import { List, Input } from "./List";
 import { MathJax } from "better-react-mathjax";
 
 function Textarea({onChange, name, required, placeholder, height}) {
@@ -116,7 +116,7 @@ function Form({host, setResponse}) {
                 </Textarea>
                 <span class="sr-only">Equation</span>
                 <div className="flex flex-col h-[85%]">
-                    <MathJax className="border-t-2 border-red-900 my-input">
+                    <MathJax className="bg-gray-200 overflow-x-auto scrollbar-gray border-t-2 border-red-900 my-input">
                         {rendered
                             ? rendered
                             : <div className="text-slate-400 font-math italic">Latex equation</div>

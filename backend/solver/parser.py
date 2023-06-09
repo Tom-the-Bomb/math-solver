@@ -183,19 +183,9 @@ class Parser:
         return Fac(p[0])
 
     @staticmethod
-    @pg.production('group : LIMIT group ARROW IDENT LPAREN expr RPAREN')
-    @pg.production('group : LIMIT group ARROW NUMBER LPAREN expr RPAREN')
-
-    @pg.production('group : LIMIT group ARROW LPAREN expr RPAREN LPAREN expr RPAREN')
-    def limit(state: Parser, p: list[Ast], /) -> Limit:
-        if len(p) == 7 and isinstance(tok := p[3], Token):
-            target = {
-                'IDENT': Parser.variable,
-                'NUMBER': Parser.number,
-            }[tok.gettokentype()](state, [tok])
-        else:
-            target = p[4]
-        return Limit(p[1], target, p[-2])
+    @pg.production('group : LIMIT SUBSCRIPT LPAREN group ARROW expr RPAREN group')
+    def limit(_, p: list[Ast], /) -> Limit:
+        return Limit(p[3], p[5], p[-1])
 
     @staticmethod
     @pg.production('expr : expr ADD expr')
