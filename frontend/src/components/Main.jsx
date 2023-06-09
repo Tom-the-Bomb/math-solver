@@ -6,7 +6,7 @@ function Textarea({name, required, placeholder, height}) {
     return (
         <textarea
             className={
-                `block ${height} w-full resize-none font-serif overflow-y-clip
+                `scrollbar-gray block ${height} w-full resize-none font-serif overflow-y-auto
                 my-input text-lg  border-t-2 border-red-900`
             }
             placeholder={placeholder}
@@ -39,7 +39,7 @@ function Form({host, setResponse}) {
                 .filter(x => x.classList.contains("constant-name") && x.value)
                 .map(x => [x.value, elementList[elementList.indexOf(x) + 1].value || 0])
         );
-        
+
         try {
             const response = await fetch(
                 `${host}/solve`, {
@@ -99,10 +99,10 @@ function Form({host, setResponse}) {
 
     return (
         <form className="flex flex-col h-full w-full justify-between" onSubmit={handleSubmit}>
-            <div className="flex flex-col gap-10 p-10 overflow-y-auto">
+            <div className="scrollbar-red flex flex-col gap-10 h-1/2 p-10 overflow-y-auto">
                 <List type="Functions"></List>
                 <List type="Constants"></List>
-                <Input name="solveFor" width="w-1/2" placeholder="Primary variable"></Input>
+                <Input name="solveFor" width="w-1/2" placeholder="Isolate for :"></Input>
             </div>
             <div className="h-1/2 w-full self-end inline-block relative">
                 <Textarea
@@ -122,7 +122,7 @@ function Form({host, setResponse}) {
                     className="my-focus my-hover text-gray-100 bg-green-500
                     rounded-lg p-3 absolute bottom-[5%] right-8"
                     type="submit"
-                >Enter</button>
+                >Solve</button>
             </div>
         </form>
     )
@@ -137,7 +137,7 @@ export default function Main({host}) {
                 <Form setResponse={(x) => setResponse(x)} host={host}></Form>
             </div>
             <div className="bg-red-2 p-10">
-                <h1 className="my-h1">Output</h1>
+                <h1 className="text-4xl my-h1">Output</h1>
                 <Output response={response}></Output>
             </div>
         </main>

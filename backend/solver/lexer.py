@@ -10,10 +10,15 @@ class LexerGenerator(Generator):
     def add_rules(self, /) -> None:
         self.ignore(r'\s+')
 
+        self.add_lim()
         self.add_relational()
         self.add_basic()
         self.add_operations()
         self.add_groupers()
+
+    def add_lim(self, /) -> None:
+        self.add('LIMIT', 'lim')
+        self.add('ARROW', '->')
 
     def add_relational(self, /, *, inequality: bool = True) -> None:
         if inequality:

@@ -15,7 +15,7 @@ function Latex({content}) {
 function Section({latex, name, content}) {
     return (
         <div className="flex flex-col gap-4">
-            <h1 className="my-h1">{name}</h1>
+            <h1 className="text-red-100 my-h1">{name}</h1>
             <div className="font-mono p-4 rounded-md bg-rose-800 text-rose-300">
                 {content.map(x => latex ? <Latex content={x}></Latex> : content)}
             </div>
@@ -37,18 +37,24 @@ export default function Output({response}) {
 
         const equation = response.content.equation;
         let simplified = response.content.simplified_equation;
-        simplified = equation == simplified
+        simplified = equation === simplified
             ? [equation]
-            : ['\\text{false}', '\\text{true}'].includes(equation.toLowerCase()) 
+            : ['\\text{false}', '\\text{true}'].includes(equation.toLowerCase())
             ? [simplified, equation]
             : [equation, simplified];
-        
+
+        let max = response.content.max
+        let min = response.content.min
+        max = max ? `\\text{Maxima @ }${max}` : ''
+        min = min ? `\\text{Minima @ }${min}` : ''
+
         return (
             <div className="flex flex-col gap-4 mt-10">
                 <Section latex={true} name="" content={[domain, range]}></Section>
                 <Section latex={true} name="Simplified" content={simplified}></Section>
                 <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
                 <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
+                <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>
             </div>
         )
     } else {

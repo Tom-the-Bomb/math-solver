@@ -1,6 +1,7 @@
 
 __all__ = (
     'SolverException',
+    'InvalidDomainParsed',
     'InvalidFunctionArgument',
     'InvalidFunctionCall',
     'NotAFunction',
@@ -9,6 +10,10 @@ __all__ = (
 
 class SolverException(Exception):
     ...
+
+class InvalidDomainParsed(SolverException):
+    def __init__(self, got: str, /) -> None:
+        super().__init__(f'"{got}" is an invalid domain expression')
 
 class InvalidFunctionArgument(SolverException):
     def __init__(self, /) -> None:

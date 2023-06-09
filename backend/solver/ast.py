@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 
 from sympy import (
+    limit,
     Symbol,
     Interval as S_Interval,
     Eq as S_Eq,
@@ -34,6 +35,7 @@ __all__ = (
     'Interval',
     'Function',
     'Constant',
+    'Limit',
     'Variable',
     'Number',
     'BinaryOp',
@@ -126,6 +128,15 @@ class Constant(Ast):
 
     def eval(self, /) -> NumberSymbol | Decimal | int:
         return self.value
+
+class Limit(Ast):
+    def __init__(self, target: Ast, to: Ast, expr: Ast) -> None:
+        self.target = target
+        self.to = to
+        self.expr = expr
+
+    def eval(self, /) -> Expr:
+        return limit(self.expr.eval(), self.target.eval(), self.to.eval())
 
 class Variable(Ast):
     def eval(self, /) -> Symbol:

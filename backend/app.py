@@ -24,7 +24,7 @@ QuartSchema(app)
 @validate_response(SolveResponse, status_code=200)
 @validate_response(Error, status_code=500)
 @rate_limit(3, timedelta(seconds=5))
-async def post_solve(data: SolveSchema) -> SolveResponse | Error:
+async def post_solve(data: SolveSchema) -> tuple[SolveResponse, int] | tuple[Error, int]:
     try:
         solver = Solver(
             data.equation,
@@ -41,6 +41,10 @@ async def post_solve(data: SolveSchema) -> SolveResponse | Error:
             range = solver.to_latex(solver.range)
         except CantGetProperty:
             range = r'\emptyset'
+        try:
+            max_min = {k: solver.to_latex(v) for k, v in solver.max_min.items()}
+        except CantGetProperty:
+            max_min = {'max': r'\infty', 'min': r'-\infty'}
         return SolveResponse(
             domain=domain,
             range=range,
@@ -50,6 +54,7 @@ async def post_solve(data: SolveSchema) -> SolveResponse | Error:
             latex_solution=solver.to_latex(solver.solution),
             raw_solution=solver.ascii_parsed_solution(evaluate_bool=True),
             parsed_solution=solver.parsed_solution(evaluate_bool=True),
+            **max_min,
         ), 200
     except Exception as e:
         return Error(error=str(e)), 500

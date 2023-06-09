@@ -26,4 +26,28 @@
     .my-h1 {
         @apply text-white font-sans font-bold text-2xl
     }
+
+    .scrollbar-red::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .scrollbar-red::-webkit-scrollbar-track {
+        @apply bg-red-800
+    }
+
+    .scrollbar-red::-webkit-scrollbar-thumb {
+        @apply bg-red-900 rounded-[100vh] hover:bg-red-950
+    }
+
+    .scrollbar-gray::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .scrollbar-gray::-webkit-scrollbar-track {
+        @apply bg-gray-100
+    }
+
+    .scrollbar-gray::-webkit-scrollbar-thumb {
+        @apply bg-gray-400 rounded-[100vh] hover:bg-gray-500
+    }
 }

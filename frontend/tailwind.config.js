@@ -13,7 +13,7 @@ module.exports = {
       },
       colors: {
         'red-1': 'rgb(190, 28, 85)',
-        'red-2': 'rgb(215, 20, 40)'
+        'red-2': 'rgb(200, 20, 40)',
       }
     },
   },

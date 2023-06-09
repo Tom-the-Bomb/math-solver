@@ -48,7 +48,7 @@ class BooleanComp:
             Lt: '<',
             Ge: r'\ge',
             Le: r'\le',
-        }.get(self.typ, self.typ.__name__)
+        }.get(self.typ, self.typ.__name__) # type: ignore
         return f'{self.lhs}{key}{self.rhs}'
 
 class Solver:
@@ -81,7 +81,14 @@ class Solver:
             )
             self.parsed_equation
 
-            self._domain: Interval = Parser().parse(domain).eval() if domain else None
+            if domain:
+                parsed = Parser().parse(domain).eval()
+                if not isinstance(parsed, Interval):
+                    raise InvalidDomainParsed(domain)
+
+                self._domain: Optional[Interval] = parsed
+            else:
+                self._domain: Optional[Interval] = None
         self.solve_for = solve_for
 
         self.kwargs = {}
@@ -120,7 +127,7 @@ class Solver:
             except Exception as e2:
                 raise e from e2
 
-    def to_latex(self, expr: Expr | Equation | BooleanComp) -> str:
+    def to_latex(self, expr: Any) -> str:
         """Converts parsed expression to latex"""
         if hasattr(expr, 'to_latex'):
             return expr.to_latex()
@@ -172,21 +179,18 @@ class Solver:
     def max_min(self, /) -> dict[str, Number]:
         """Returns a dictionary containing the maxima and/or the minima, if exists"""
         result = {}
-        kwargs = {
-            'symbol': self.parser.variables[0].eval(),
-            **self.kwargs
-        }
-
         try:
+            kwargs = {
+                'symbol': self.parser.variables[0].eval(),
+                **self.kwargs
+            }
+
             if abs(maxima := maximum(self.lhs_equation, **kwargs)) != oo: # type: ignore
                 result['max'] = maxima
-        except (ValueError, IndexError) as e:
-            raise CantGetProperty('maxima') from e
-        try:
             if abs(minima := minimum(self.lhs_equation, **kwargs)) != oo: # type: ignore
                 result['min'] = minima
-        except (ValueError, IndexError) as e:
-            raise CantGetProperty('minima') from e
+        except Exception as e:
+            return {'max': self.lhs_equation, 'min': self.lhs_equation}
         return result
 
     @cached_property

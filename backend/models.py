@@ -25,6 +25,8 @@ class SolveResponse:
     raw_solution: str
     parsed_solution: str
     derivative: str
+    max: str = r'\infty'
+    min: str = r'-\infty'
 
 @dataclass
 class Error:

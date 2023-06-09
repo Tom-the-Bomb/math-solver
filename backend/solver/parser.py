@@ -78,6 +78,12 @@ class Parser:
             'tau': 2 * pi,
             'phi': GoldenRatio,
             'inf': oo,
+
+            'π': pi,
+            'τ': 2 * pi,
+            'φ': GoldenRatio,
+            'Φ': GoldenRatio,
+            '∞': oo,
         },
             **({k: Decimal(str(v)) if isinstance(v, float) else v for k, v in constants.items()}
             if constants else {})
@@ -100,13 +106,13 @@ class Parser:
 
     @staticmethod
     @pg.production('equation : func EQ expr')
-    def defined_function(state: Parser, p: list[list[Ast]]) -> DefinedFunction:
+    def defined_function(state: Parser, p: list[list[Ast]]) -> DefinedFunction | BinaryOp | BooleanResult:
         assert isinstance(name := p[0][0], Token)
         assert isinstance(expr := p[-1], Ast)
 
         if not state.is_parsing_function:
             func = Parser.fx(state, [p[0]])
-            return Parser.equation(state, [func, *p[1:]])
+            return Parser.equation(state, [func, *p[1:]]) # type: ignore
 
         f_name = name.getstr()
         arguments: list[Ast] = p[0][-1] if isinstance(p[0][-1], list) else [p[0][-1]]
@@ -177,6 +183,21 @@ class Parser:
         return Fac(p[0])
 
     @staticmethod
+    @pg.production('group : LIMIT group ARROW IDENT LPAREN expr RPAREN')
+    @pg.production('group : LIMIT group ARROW NUMBER LPAREN expr RPAREN')
+
+    @pg.production('group : LIMIT group ARROW LPAREN expr RPAREN LPAREN expr RPAREN')
+    def limit(state: Parser, p: list[Ast], /) -> Limit:
+        if len(p) == 7 and isinstance(tok := p[3], Token):
+            target = {
+                'IDENT': Parser.variable,
+                'NUMBER': Parser.number,
+            }[tok.gettokentype()](state, [tok])
+        else:
+            target = p[4]
+        return Limit(p[1], target, p[-2])
+
+    @staticmethod
     @pg.production('expr : expr ADD expr')
     @pg.production('expr : expr SUB expr')
     @pg.production('expr : expr MUL expr')
@@ -202,7 +223,7 @@ class Parser:
     @pg.production('arguments : arguments COMMA expr')
     def arguments(_, p: list[list[Ast]]) -> list[Ast]:
         assert isinstance(p[-1], Ast)
-        return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[-1]]
+        return p[0] + [p[-1]] if isinstance(p[0], list) else [p[0]] + [p[-1]] # type: ignore
 
     @pg.production('call : LPAREN RPAREN')
     @pg.production('call : LPAREN arguments RPAREN')
