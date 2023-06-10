@@ -43,6 +43,14 @@ def _to_camel_case(string: str) -> str:
     return next(terms) + ''.join(t.title() for t in terms)
 
 class Parser:
+    GREEK_LETTERS: ClassVar[list[str]] = [
+        'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
+        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho',
+        'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
+        'Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta',
+        'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho',
+        'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega',
+    ]
     lg: ClassVar[LexerGenerator] = LexerGenerator()
     pg: ClassVar[ParserGenerator] = ParserGenerator(
         [
@@ -270,12 +278,14 @@ class Parser:
     @pg.production('var : IDENT')
     @pg.production('var : IDENT SUBSCRIPT NUMBER')
     def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Iterable[Variable]:
-        ident = p[0].getstr()
+        ident: str = p[0].getstr()
         if len(p) == 3:
             ident += f'_{p[-1].getstr()}'
 
         if x := state.constants.get(ident):
             return Constant(ident, x)
+        if ident in state.GREEK_LETTERS:
+            return Variable(ident)
 
         raw = p[0].getstr()
         if len(ident) == 1 or len(raw) == 1:
