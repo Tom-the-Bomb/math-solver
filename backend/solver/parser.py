@@ -84,6 +84,8 @@ class Parser:
             'tau': 2 * pi,
             'phi': GoldenRatio,
             'inf': oo,
+            'infty': oo,
+            'oo': oo,
 
             'π': pi,
             'τ': 2 * pi,
