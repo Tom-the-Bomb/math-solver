@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 
 var katex = require('katex');
 
@@ -13,6 +13,20 @@ function Latex({content}) {
 }
 
 function Section({latex, name, content}) {
+    const [ copyClicked, setCopyClicked ] = useState(false);
+
+    const delay = ms => new Promise(
+        resolve => setTimeout(resolve, ms)
+    );
+
+    const copyClick = async (content) => {
+        navigator.clipboard.writeText(content.join("\n"));
+
+        setCopyClicked(true);
+        await delay(1000);
+        setCopyClicked(false);
+    }
+
     return (
         <div className="flex flex-col gap-4">
             <h1 className="text-red-100 my-h1">{name}</h1>
@@ -20,13 +34,16 @@ function Section({latex, name, content}) {
                 <div>
                     {content.map(x => latex ? <Latex content={x}></Latex> : content)}
                 </div>
-                <button
-                    onClick={() => navigator.clipboard.writeText(content.join("\n"))}
-                    type="button"
-                    className="hover:brightness-[120%] ease-in duration-100 bg-transparent"
-                >
-                    <img src={process.env.PUBLIC_URL + "/assets/copy.svg"} alt="copy"/>
-                </button>
+                { copyClicked
+                    ? <div className="self-center font-md font-sans text-green-400">Copied!</div>
+                    : <button
+                        onClick={() => copyClick(content)}
+                        type="button"
+                        className="rounded-md hover:brightness-[120%] ease-in duration-100 bg-transparent"
+                    >
+                        <img src={process.env.PUBLIC_URL + "/assets/copy.svg"} alt="copy"/>
+                    </button>
+                }
             </div>
         </div>
     )
