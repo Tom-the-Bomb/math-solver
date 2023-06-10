@@ -20,7 +20,10 @@ def test_parsing() -> None:
 
     print()
     for equation in equations:
-        print(equation, '|', Solver(equation).parsed_equation)
+        print(
+            f'{equation:<{max(len(x) for x in equations)}} |',
+            Solver(equation).parsed_equation
+        )
 
 def test_functions() -> None:
     print()

@@ -16,8 +16,17 @@ function Section({latex, name, content}) {
     return (
         <div className="flex flex-col gap-4">
             <h1 className="text-red-100 my-h1">{name}</h1>
-            <div className="font-mono p-4 rounded-md bg-rose-800 text-rose-300">
-                {content.map(x => latex ? <Latex content={x}></Latex> : content)}
+            <div className="flex flex-row justify-between font-mono p-4 rounded-md bg-rose-800 text-rose-300">
+                <div>
+                    {content.map(x => latex ? <Latex content={x}></Latex> : content)}
+                </div>
+                <button
+                    onClick={() => navigator.clipboard.writeText(content.join("\n"))}
+                    type="button"
+                    className="hover:brightness-[120%] ease-in duration-100 bg-transparent"
+                >
+                    <img src={process.env.PUBLIC_URL + "/assets/copy.svg"} alt="copy"/>
+                </button>
             </div>
         </div>
     )
