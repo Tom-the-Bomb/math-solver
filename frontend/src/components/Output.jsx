@@ -29,10 +29,10 @@ function Section({latex, name, content}) {
 
     return (
         <div className="flex flex-col gap-4">
-            <h1 className="text-red-100 my-h1">{name}</h1>
+            <h1 className="text-red-100 text-lg my-h1">{name}</h1>
             <div className="flex flex-row justify-between font-mono p-4 rounded-md bg-rose-800 text-rose-300">
                 <div>
-                    {content.map(x => latex ? <Latex content={x}></Latex> : content)}
+                    {content.map((x, i) => latex ? <Latex key={i} content={x}></Latex> : content)}
                 </div>
                 { copyClicked
                     ? <div className="self-center font-md font-sans text-green-400">Copied!</div>
@@ -76,7 +76,7 @@ export default function Output({response}) {
 
         return (
             <div className="flex flex-col gap-4 mt-10">
-                <Section latex={true} name="" content={[domain, range]}></Section>
+                <Section latex={true} name="Domain & Range" content={[domain, range]}></Section>
                 <Section latex={true} name="Simplified" content={simplified}></Section>
                 <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
                 <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>

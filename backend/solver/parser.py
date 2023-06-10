@@ -264,7 +264,7 @@ class Parser:
                 'IDENT': Parser.variable,
             }[tok.gettokentype()](state, [tok])
 
-        if f := state.functions.get(ident):
+        if (f := state.functions.get(ident)) is not None:
             arguments = tuple(call)
             if len(p) in (4, 6) and subscript:
                 arguments += (subscript,)
@@ -290,7 +290,7 @@ class Parser:
         if len(p) == 3:
             ident += f'_{p[-1].getstr()}'
 
-        if x := state.constants.get(ident):
+        if (x := state.constants.get(ident)) is not None:
             return Constant(ident, x)
         if ident in state.GREEK_LETTERS:
             return Variable(ident)
@@ -327,7 +327,7 @@ class Parser:
             expr = Number('1')
             for i, x in enumerate(variables):
                 x: Variable
-                if con := state.constants.get(x.value):
+                if (con := state.constants.get(x.value)) is not None:
                     sym = Constant(x.value, con)
                 else:
                     sym = x

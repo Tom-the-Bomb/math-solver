@@ -39,7 +39,10 @@ function Form({host, setResponse}) {
         const constants = Object.fromEntries(
             elementList
                 .filter(x => x.classList.contains("constant-name") && x.value)
-                .map(x => [x.value, elementList[elementList.indexOf(x) + 1].value || 0])
+                .map(x => [
+                    x.value,
+                    parseFloat(elementList[elementList.indexOf(x) + 1].value || 0)
+                ])
         );
 
         try {
@@ -105,7 +108,7 @@ function Form({host, setResponse}) {
             <div className="scrollbar-red flex flex-col gap-10 h-1/2 pt-5 p-10 overflow-y-auto">
                 <List type="Functions"></List>
                 <List type="Constants"></List>
-                <Input name="solveFor" width="w-1/2" placeholder="Isolate for :"></Input>
+                <Input name="solveFor" width="w-1/2" placeholder="Isolate for:"></Input>
             </div>
             <div className="h-1/2 w-full self-end inline-block relative">
                 <Textarea
@@ -114,7 +117,7 @@ function Form({host, setResponse}) {
                     placeholder="Domain: e.g. [0, inf)"
                     height="h-[15%]">
                 </Textarea>
-                <span class="sr-only">Equation</span>
+                <span className="sr-only">Equation</span>
                 <div className="flex flex-col h-[85%]">
                     <MathJax className="bg-gray-200 overflow-x-auto scrollbar-gray border-t-2 border-red-900 my-input">
                         {rendered

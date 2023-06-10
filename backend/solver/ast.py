@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Callable, Optional, TypeAlias, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
+from copy import deepcopy
 
 from sympy import (
     limit,
@@ -94,11 +95,10 @@ class DefinedFunction(Ast):
         self.expression = expression
 
     def eval(self, /) -> Functions:
-        raw_function = self.expression.eval()
-
-        if self.arguments and isinstance(raw_function, Basic):
+        if self.arguments and isinstance(self.expression.eval(), Basic):
             def f(*args) -> Expr:
-                nonlocal raw_function
+                raw_function = self.expression.eval()
+
                 for arg_name, arg_val in zip(self.arguments, args):
                     if name := getattr(arg_name, 'value', None):
                         if isinstance(arg_name, Constant):
@@ -109,9 +109,9 @@ class DefinedFunction(Ast):
                 return raw_function
             function = f
         elif self.arguments:
-            function = lambda *_: raw_function
+            function = lambda *_: self.expression.eval()
         else:
-            function = lambda: raw_function
+            function = lambda: self.expression.eval()
         return {self.f_name: function}
 
 class Function(Ast):
