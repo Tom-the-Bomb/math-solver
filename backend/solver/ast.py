@@ -16,7 +16,7 @@ from sympy import (
     Ge as S_Ge,
 )
 
-from sympy.functions import factorial
+from sympy.functions import factorial, root
 from sympy.core.basic import Basic
 from sympy.core.relational import Relational
 
@@ -50,6 +50,7 @@ __all__ = (
     'Mod',
     'Pow',
     'Fac',
+    'Root',
     'Eq',
     'Ne',
     'Lt',
@@ -199,6 +200,14 @@ class Fac(Ast):
 
     def eval(self, /) -> factorial:
         return factorial(self.x.eval())
+
+class Root(Ast):
+    def __init__(self, pow: Ast, x: Ast, /) -> None:
+        self.pow = pow
+        self.x = x
+
+    def eval(self, /) -> factorial:
+        return root(self.x.eval(), self.pow.eval())
 
 class Conditional(BinaryOp, ABC):
     @abstractmethod

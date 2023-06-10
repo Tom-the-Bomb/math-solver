@@ -10,13 +10,14 @@ class LexerGenerator(Generator):
     def add_rules(self, /) -> None:
         self.ignore(r'\s+')
 
-        self.add_lim()
+        self.add_special()
         self.add_relational()
         self.add_basic()
         self.add_operations()
         self.add_groupers()
 
-    def add_lim(self, /) -> None:
+    def add_special(self, /) -> None:
+        self.add('ROOT', 'root')
         self.add('LIMIT', 'lim')
         self.add('ARROW', '->')
 

@@ -11,7 +11,6 @@ from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
 from sympy.logic.boolalg import BooleanAtom
 from sympy import (
-    limit,
     E, I, pi, GoldenRatio, oo,
     functions as func_mod,
     NumberSymbol,
@@ -75,7 +74,6 @@ class Parser:
     ) -> None:
         self.is_parsing_function = is_parsing_function
         self.functions = {
-            'lim': limit,
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
@@ -169,7 +167,15 @@ class Parser:
         return p[0]
 
     @staticmethod
+    @pg.production('group : ROOT root', precedence='IMPL_MUL')
+    def implicit_mul(_, p: list[Mul], /) -> Root:
+        left = p[1].left
+        right = p[1].right
+        return Root(left, right)
+
+    @staticmethod
     @pg.production('group : group group', precedence='IMPL_MUL')
+    @pg.production('root : group group', precedence='IMPL_MUL')
     def implicit_mul(_, p: list[Ast], /) -> Mul:
         return Mul(p[0], p[1])
 
