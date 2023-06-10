@@ -9,7 +9,7 @@ __all__ = (
 
 def test_parsing() -> None:
     equations = (
-        "x^-1"
+        "2 + 3 * 6root2x -  4 * 5",
         "root(2x + 1)2x+1",
         "[2y]2sin(2[x])",
         "1 - 2 + -x + -3 - 4 + 5x - +0! != 7 % 2",
