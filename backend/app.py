@@ -34,24 +34,26 @@ async def post_solve(data: SolveSchema) -> tuple[SolveResponse, int] | tuple[Err
             constants=data.constants,
         )
         try:
-            domain = solver.to_latex(solver.domain)
+            domain = Solver.to_latex(solver.domain)
         except CantGetProperty:
             domain = r'\emptyset'
         try:
-            range = solver.to_latex(solver.range)
+            range = Solver.to_latex(solver.range)
         except CantGetProperty:
             range = r'\emptyset'
         try:
-            max_min = {k: solver.to_latex(v) for k, v in solver.max_min.items()}
+            max_min = {k: Solver.to_latex(v) for k, v in solver.max_min.items()}
         except CantGetProperty:
             max_min = {'max': r'\infty', 'min': r'-\infty'}
         return SolveResponse(
             domain=domain,
             range=range,
-            equation=solver.to_latex(solver.parsed_equation),
-            derivative=solver.to_latex(solver.derivative),
-            simplified_equation=solver.to_latex(solver.simplify()),
-            latex_solution=solver.to_latex(solver.solution),
+            factored=Solver.to_latex(solver.factored),
+            expanded=Solver.to_latex(solver.expanded),
+            equation=Solver.to_latex(solver.parsed_equation),
+            derivative=Solver.to_latex(solver.derivative),
+            simplified_equation=Solver.to_latex(solver.simplify()),
+            latex_solution=Solver.to_latex(solver.solution),
             raw_solution=solver.ascii_parsed_solution(evaluate_bool=True),
             parsed_solution=solver.parsed_solution(evaluate_bool=True),
             **max_min,

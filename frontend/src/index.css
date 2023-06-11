@@ -43,6 +43,18 @@
         @apply bg-red-900 rounded-[100vh] hover:bg-red-950
     }
 
+    .scrollbar-latex::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    .scrollbar-latex::-webkit-scrollbar-track {
+        @apply bg-red-800 rounded-md
+    }
+
+    .scrollbar-latex::-webkit-scrollbar-thumb {
+        @apply bg-red-900 rounded-[100vh] hover:bg-red-950
+    }
+
     .scrollbar-gray::-webkit-scrollbar {
         width: 12px;
         height: 12px;

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Optional, TypeAlias, TYPE_CHECKING
+from typing import Any, Callable, TypeAlias, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from copy import deepcopy
 
 from sympy import (
+    latex,
     limit,
     Symbol,
     Interval as S_Interval,
@@ -246,6 +246,11 @@ class BooleanResult(Ast):
         return f"<{self.__class__.__name__} '{self.to_latex()}'>"
 
     def to_latex(self, /) -> str:
+        def _latex(expr: Any) -> str:
+            if hasattr(expr, 'to_latex'):
+                return expr.to_latex()
+            return latex(expr)
+
         name = self.conditional.__class__.__name__
         key = {
             'Eq': '=',
@@ -255,7 +260,7 @@ class BooleanResult(Ast):
             'Ge': r'\ge',
             'Le': r'\le',
         }.get(name, name)
-        return f'{self.lhs}{key}{self.rhs}'
+        return f'{_latex(self.lhs)}{key}{_latex(self.rhs)}'
 
     @property
     def sympy_conditional(self, /) -> Relational:

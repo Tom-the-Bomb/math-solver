@@ -5,7 +5,9 @@ export function Input({name, type, class_, placeholder, width}) {
         <input
             name={name}
             className={`${class_} font-math rounded-md text-s my-input h-12 ${width}`}
-            type={type ? type : "text"} placeholder={placeholder}
+            type={type ? type : "text"}
+            step={type === "number" ? "any" : undefined}
+            placeholder={placeholder}
         />
     )
 }

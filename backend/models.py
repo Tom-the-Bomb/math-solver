@@ -19,6 +19,8 @@ class SolveSchema:
 class SolveResponse:
     domain: str
     range: str
+    factored: str
+    expanded: str
     equation: str
     simplified_equation: str
     latex_solution: str

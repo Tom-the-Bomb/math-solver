@@ -49,7 +49,7 @@ class BooleanComp:
             Ge: r'\ge',
             Le: r'\le',
         }.get(self.typ, self.typ.__name__) # type: ignore
-        return f'{self.lhs}{key}{self.rhs}'
+        return f'{Solver.to_latex(self.lhs)}{key}{Solver.to_latex(self.rhs)}'
 
 class Solver:
     def __init__(
@@ -127,7 +127,8 @@ class Solver:
             except Exception as e2:
                 raise e from e2
 
-    def to_latex(self, expr: Any) -> str:
+    @staticmethod
+    def to_latex(expr: Any) -> str:
         """Converts parsed expression to latex"""
         if hasattr(expr, 'to_latex'):
             return expr.to_latex()
@@ -156,12 +157,12 @@ class Solver:
     @cached_property
     def factored(self, /) -> Expr:
         """x^2 - 4 -> (x + 2)(x - 2)"""
-        return factor(self.parsed_equation)
+        return factor(self.lhs_equation)
 
     @cached_property
     def expanded(self, /) -> Expr:
         """(x + 1)(x + 2) -> x^2 + 3x + 2"""
-        return expand(self.parsed_equation)
+        return expand(self.lhs_equation)
 
     @cache
     def simplify(self, /, *, evaluate_bool: bool = False) -> Expr | BooleanComp:
