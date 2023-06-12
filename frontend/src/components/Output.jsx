@@ -57,7 +57,14 @@ function Section({latex, name, content}) {
                         }
                     </div>
                 </div>
-                : <img className="rounded-md mt-4 max-h-[100vh]" src={content} alt="graph"/>
+                : <div>
+                    <p className="text-red-300 my-2">
+                        <img className="inline-block mr-2" src={process.env.PUBLIC_URL + "/assets/info.svg"} alt="(i)"/>
+                        If the graph is not fully showing or off centered, try entering a domain interval
+                        which will be used as the x-axis range
+                    </p>
+                    <img className="rounded-md mt-4 max-h-[100vh]" src={content} alt="graph"/>
+                </div>
             }
         </details>
     )
