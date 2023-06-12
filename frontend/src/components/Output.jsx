@@ -28,9 +28,12 @@ function Section({latex, name, content}) {
     }
 
     return (
-        <div className="flex flex-col gap-4">
-            <h1 className="text-red-100 text-lg my-h1">{name}</h1>
-            <div className="scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
+        <details open className="[&_img]:open:-rotate-180">
+            <summary className="flex items-center gap-4 border-b-2 py-2 border-rose-500">
+                <h1 className="text-red-100 text-lg my-h1">{name}</h1>
+                <img className="rotate-0 transform text-blue-700 transition-all duration-300" src={process.env.PUBLIC_URL + "/assets/arrow.svg"} alt=">"/>
+            </summary>
+            <div className="mt-4 scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
                 font-mono p-4 rounded-md bg-rose-800 text-rose-300"
             >
                 <div>
@@ -49,13 +52,13 @@ function Section({latex, name, content}) {
                     }
                 </div>
             </div>
-        </div>
+        </details>
     )
 }
 
 export default function Output({response}) {
     if (response) {
-        if (!response.ok) {
+        if (!response.ok || response.content.error !== undefined) {
             return (
                 <div className="mt-10">
                     <Section name="Error" content={[response.content.error]}></Section>
@@ -84,14 +87,18 @@ export default function Output({response}) {
         expanded = expanded ? `\\textbf{Expanded : }${expanded}` : ''
 
         return (
-            <div className="flex flex-col gap-4 mt-10">
-                <Section latex={true} name="Domain & Range" content={[domain, range]}></Section>
-                <Section latex={true} name="Simplified" content={simplified}></Section>
-                <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
-                <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
-                <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>
-                <Section latex={true} name="Factored & Expanded" content={[factored, expanded]}></Section>
-            </div>
+            response.isGraph
+                ? <div>
+                    <img className="rounded-md mt-4 max-h-[100vh]" src={response.content.image} alt="graph"/>
+                </div>
+                : <div className="flex flex-col gap-2 mt-10">
+                    <Section latex={true} name="Domain & Range" content={[domain, range]}></Section>
+                    <Section latex={true} name="Simplified" content={simplified}></Section>
+                    <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
+                    <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
+                    <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>
+                    <Section latex={true} name="Factored & Expanded" content={[factored, expanded]}></Section>
+                </div>
         )
     } else {
         return (

@@ -39,7 +39,7 @@ def _to_camel_case(string: str) -> str:
     * Required for function names to not conflict with subscripts on function names
     """
     terms = iter(string.split('_'))
-    return next(terms) + ''.join(t.title() for t in terms)
+    return next(terms).lower() + ''.join(t.title() for t in terms)
 
 class Parser:
     GREEK_LETTERS: ClassVar[list[str]] = [
@@ -50,6 +50,7 @@ class Parser:
         'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Omicron', 'Pi', 'Rho',
         'Sigma', 'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega',
     ]
+
     lg: ClassVar[LexerGenerator] = LexerGenerator()
     pg: ClassVar[ParserGenerator] = ParserGenerator(
         [
@@ -127,16 +128,26 @@ class Parser:
         return DefinedFunction(f_name, arguments, expr)
 
     @staticmethod
-    @pg.production('equation : LBRACK expr COMMA expr RBRACK')
-    @pg.production('equation : LBRACK expr COMMA expr RPAREN')
+    @pg.production('interval : LBRACK expr COMMA expr RBRACK')
+    @pg.production('interval : LBRACK expr COMMA expr RPAREN')
 
-    @pg.production('equation : LPAREN expr COMMA expr RBRACK')
-    @pg.production('equation : LPAREN expr COMMA expr RPAREN')
+    @pg.production('interval : LPAREN expr COMMA expr RBRACK')
+    @pg.production('interval : LPAREN expr COMMA expr RPAREN')
     def domain_interval(_, p: list[Token]) -> Interval:
         assert isinstance(p[1], Ast)
         assert isinstance(p[-2], Ast)
 
         return Interval(p[0].getstr(), p[1], p[-2], p[-1].getstr())
+
+    @staticmethod
+    @pg.production('equation : IDENT PIPE interval')
+    @pg.production('equation : interval')
+    def domain_interval(_, p: list[Interval]) -> Interval:
+        if len(p) == 1:
+            return p[0]
+        else:
+            assert isinstance(p[0], Token)
+            return CompoundInterval(p[0].getstr(), p[2])
 
     @staticmethod
     @pg.production('equation : expr')
@@ -185,6 +196,11 @@ class Parser:
     @pg.production('group : NUMBER')
     def number(_, p: list[Token], /) -> Number:
         return Number(p[0].getstr())
+
+    @staticmethod
+    @pg.production('expr : PIPE expr PIPE')
+    def abs_val(_, p: list[Ast]) -> Abs:
+        return Abs(p[1])
 
     @staticmethod
     @pg.production('group : LPAREN expr RPAREN')
@@ -292,11 +308,9 @@ class Parser:
 
         if (x := state.constants.get(ident)) is not None:
             return Constant(ident, x)
-        if ident in state.GREEK_LETTERS:
-            return Variable(ident)
 
         raw = p[0].getstr()
-        if len(ident) == 1 or len(raw) == 1:
+        if len(ident) == 1 or len(raw) == 1 or ident in state.GREEK_LETTERS:
             var = Variable(ident)
             state.variables.append(var)
             return var

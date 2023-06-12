@@ -8,6 +8,7 @@ dependencies = [
     "rply",
     "quart",
     "sympy",
+    "matplotlib",
     "quart-cors",
     "quart-schema",
     "quart-rate-limiter",

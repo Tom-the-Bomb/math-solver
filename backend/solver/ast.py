@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias, TYPE_CHECKING
+from typing import Any, Callable, TypeAlias, ClassVar, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
@@ -15,9 +15,13 @@ from sympy import (
     Le as S_Le,
     Gt as S_Gt,
     Ge as S_Ge,
+    Complexes, Reals, Rationals, Naturals, Naturals0, Integers,
 )
 
-from sympy.functions import factorial, root
+from sympy.functions import (
+    factorial, root,
+    Abs as S_Abs,
+)
 from sympy.core.basic import Basic
 from sympy.core.relational import Relational
 
@@ -34,6 +38,7 @@ __all__ = (
     'Ast',
     'DefinedFunction',
     'Interval',
+    'CompoundInterval',
     'Function',
     'Constant',
     'Limit',
@@ -51,6 +56,7 @@ __all__ = (
     'Mod',
     'Pow',
     'Fac',
+    'Abs',
     'Root',
     'Eq',
     'Ne',
@@ -87,6 +93,33 @@ class Interval(Ast):
             '(]': S_Interval.Lopen,
             '[)': S_Interval.Ropen,
         }[self.brackets](self.a.eval(), self.b.eval())
+
+class CompoundInterval(Interval):
+    NUMBER_SETS: ClassVar[dict[str, Interval]] = {
+        'complex': Complexes,
+        'real': Reals,
+        'rational': Rationals,
+        'integer': Integers,
+        'whole': Naturals,
+        'naturals': Naturals0,
+
+        'c': Complexes,
+        'r': Reals,
+        'q': Rationals,
+        'z': Integers,
+        'w': Naturals,
+        'n': Naturals0,
+    }
+
+    def __init__(self, number_set: str, interval: Interval) -> None:
+        self.number_set = number_set
+        self.interval = interval
+
+    def eval(self, /) -> S_Interval:
+        if set_ := self.NUMBER_SETS.get(self.number_set.strip().lower()):
+            return set_.intersection(self.interval.eval())
+        else:
+            raise InvalidDomainParsed(self.number_set)
 
 class DefinedFunction(Ast):
     def __init__(self, f_name: str, arguments: list[Ast], expression: Ast) -> None:
@@ -200,6 +233,13 @@ class Fac(Ast):
 
     def eval(self, /) -> factorial:
         return factorial(self.x.eval())
+
+class Abs(Ast):
+    def __init__(self, x: Ast, /) -> None:
+        self.x = x
+
+    def eval(self, /) -> S_Abs:
+        return S_Abs(self.x.eval())
 
 class Root(Ast):
     def __init__(self, pow: Ast, x: Ast, /) -> None:

@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Optional, ClassVar, Final, Any
 from functools import cache, cached_property
 from contextlib import redirect_stdout
-from io import StringIO
+from io import StringIO, BytesIO
 import warnings
 
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt
+
+import numpy as np
 from sympy import (
     oo,
     Reals,
@@ -25,11 +30,12 @@ from sympy.core.relational import Relational
 from sympy.logic.boolalg import BooleanAtom
 
 from .parser import Parser, Constants, Functions
-from .ast import Ast, DefinedFunction, BooleanResult, Equation, Expr
+from .ast import Ast, CompoundInterval, DefinedFunction, BooleanResult, Equation, Expr
 from .exceptions import *
 
 if TYPE_CHECKING:
     from sympy import Set, Number
+    from matplotlib.text import Text
 
 class BooleanComp:
     def __init__(self, lhs: Expr, typ: Relational, rhs: Expr, /) -> None:
@@ -52,6 +58,10 @@ class BooleanComp:
         return f'{Solver.to_latex(self.lhs)}{key}{Solver.to_latex(self.rhs)}'
 
 class Solver:
+    GRAPH_AXES_COLOR: ClassVar[str] = '#413939'
+    GRAPH_LINE_COLOR: ClassVar[str] = '#EFB8CA'
+    GRAPH_GRID_COLOR: ClassVar[str] = '#634848'
+
     def __init__(
         self, /,
         equation: str,
@@ -81,21 +91,88 @@ class Solver:
             )
             self.parsed_equation
 
+            self._domain: Optional[Interval]
             if domain:
-                parsed = Parser().parse(domain).eval()
-                if not isinstance(parsed, Interval):
-                    raise InvalidDomainParsed(domain)
-
-                self._domain: Optional[Interval] = parsed
+                if set_ := CompoundInterval.NUMBER_SETS.get(domain.strip().lower()):
+                    self._domain = set_
+                else:
+                    try:
+                        parsed = Parser().parse(domain).eval()
+                        if not isinstance(parsed, Interval):
+                            raise InvalidDomainParsed(domain)
+                    except (SyntaxError, ValueError) as e:
+                        raise InvalidDomainParsed(domain) from e
+                    self._domain = parsed
             else:
-                self._domain: Optional[Interval] = None
+                self._domain = None
         self.solve_for = solve_for
 
-        self.kwargs = {}
+        self._kwargs = {}
         if self._domain is not None:
-            self.kwargs['domain'] = self._domain
+            self._kwargs['domain'] = self._domain
         if self.solve_for is not None:
-            self.kwargs['symbol'] = Symbol(self.solve_for)
+            self._kwargs['symbol'] = Symbol(self.solve_for)
+
+    def graph(self, /) -> BytesIO:
+        fig = plt.figure(1, figsize=(10, 10))
+        ax = fig.add_subplot(1, 1, 1)
+
+        try:
+            variable = self._kwargs.get(
+                'symbol',
+                self.parser.variables[0].eval()
+            )
+        except IndexError:
+            variable = None
+        def f(x):
+            if variable is not None:
+                val = self.lhs_equation.subs(variable, x)
+            else:
+                val = self.lhs_equation
+            try:
+                float(val)
+                return val
+            except TypeError:
+                return
+        fx = np.vectorize(f)
+
+        if self._domain:
+            x1, x2 = float(self._domain.start), float(self._domain.end)
+        else:
+            x1, x2 = -20, 20
+        x = np.linspace(x1, x2, 500)
+        ax.spines['bottom'].set_position('zero')
+        ax.spines['bottom'].set_color(self.GRAPH_AXES_COLOR)
+
+        ax.spines['left'].set_position('zero')
+        ax.spines['left'].set_color(self.GRAPH_AXES_COLOR)
+
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+
+        ax.grid(which='both', color=self.GRAPH_GRID_COLOR, linewidth=1, linestyle='-', alpha=0.2)
+        for tick in ax.get_xticklabels() + ax.get_yticklabels():
+            tick: Text
+            tick.set_fontsize(8)
+
+        ax.plot(x, fx(x), color=self.GRAPH_LINE_COLOR)
+
+        arrow_fmt = dict(markersize=4, color=self.GRAPH_AXES_COLOR, clip_on=False)
+        ax.plot((1), (0), marker='>', transform=ax.get_yaxis_transform(), **arrow_fmt)
+        ax.plot((0), (1), marker='^', transform=ax.get_xaxis_transform(), **arrow_fmt)
+
+        buffer = BytesIO()
+        fig.savefig(buffer,
+            dpi=300,
+            bbox_inches='tight',
+            pad_inches=0,
+            transparent=True,
+        )
+        plt.close()
+        buffer.seek(0)
+        return buffer
 
     @cached_property
     def derivative(self, /) -> Derivative:
@@ -120,10 +197,10 @@ class Solver:
     def solution(self, /) -> Set | list[Any]:
         """Returns the raw solution still represented by SymPy objectss"""
         try:
-            return s_solveset(self.parsed_equation, **self.kwargs)
+            return s_solveset(self.parsed_equation, **self._kwargs)
         except Exception as e:
             try:
-                return s_solve(self.parsed_equation, **self.kwargs)
+                return s_solve(self.parsed_equation, **self._kwargs)
             except Exception as e2:
                 raise e from e2
 
@@ -183,7 +260,7 @@ class Solver:
         try:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
-                **self.kwargs
+                **self._kwargs
             }
 
             if abs(maxima := maximum(self.lhs_equation, **kwargs)) != oo: # type: ignore
@@ -201,7 +278,7 @@ class Solver:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
                 'domain': Reals,
-                **self.kwargs
+                **self._kwargs
             }
             return continuous_domain(self.lhs_equation, **kwargs) # type: ignore
         except Exception as e:
@@ -214,7 +291,7 @@ class Solver:
             kwargs = {
                 'symbol': self.parser.variables[0].eval(),
                 'domain': Reals,
-                **self.kwargs
+                **self._kwargs
             }
             return function_range(self.lhs_equation, **kwargs) # type: ignore
         except Exception as e:

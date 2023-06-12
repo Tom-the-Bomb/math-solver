@@ -44,10 +44,24 @@ function Form({host, setResponse}) {
                     parseFloat(elementList[elementList.indexOf(x) + 1].value || 0)
                 ])
         );
+        const isGraph = event.nativeEvent.submitter.name === 'graph-submit';
+
+        function handleStatus(response, _default) {
+            switch (response.status) {
+                case 429:
+                    return "To many requests... Slow down!";
+                case 400:
+                    return "Bad Input data... :/";
+                case 500:
+                    return "Something went wrong... :(";
+                default:
+                    return _default;
+            }
+        }
 
         try {
             const response = await fetch(
-                `${host}/solve`, {
+                `${host}/${isGraph ? 'graph' : 'solve'}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -62,37 +76,53 @@ function Form({host, setResponse}) {
                 }
             );
 
+            if (isGraph) {
+                const blob = await response.blob();
+                let content;
+                if (!response.ok) {
+                    content = await new Response(blob).text();
+                    try {
+                        content = JSON.parse(content)
+                    } catch {
+                        const message = handleStatus(response, content);
+                        content = {
+                            error: message,
+                        }
+                    }
+                } else {
+                    console.log(URL.createObjectURL(blob))
+                    content = {
+                        image: URL.createObjectURL(blob)
+                    }
+                }
+                return setResponse({
+                    isGraph: true,
+                    status: response.status,
+                    ok: response.ok,
+                    content: content,
+                })
+            }
+
             const raw = await response.text();
             let content;
             try {
                 content = JSON.parse(raw);
             } catch {
-                let message;
-                switch (response.status) {
-                    case 429:
-                        message = "To many requests... Slow down!";
-                        break;
-                    case 400:
-                        message = "Bad Input data... :/";
-                        break;
-                    case 500:
-                        message = "Something went wrong... :(";
-                        break;
-                    default:
-                        message = raw;
-                }
+                const message = handleStatus(response, raw);
                 content = {
-                    error: message
+                    error: message,
                 };
             }
 
             setResponse({
+                isGraph: false,
                 status: response.status,
                 ok: response.ok,
                 content: content,
             });
         } catch(e) {
             setResponse({
+                isGraph: false,
                 status: 0,
                 ok: false,
                 content: {
@@ -114,7 +144,7 @@ function Form({host, setResponse}) {
                 <Textarea
                     required={false}
                     name="domain"
-                    placeholder="Domain: e.g. [0, inf)"
+                    placeholder='Domain: ex: R | [0, inf)'
                     height="h-[15%]">
                 </Textarea>
                 <span className="sr-only">Equation</span>
@@ -134,6 +164,13 @@ function Form({host, setResponse}) {
                     </Textarea>
                 </div>
                 <button
+                    name="graph-submit"
+                    className="my-focus my-hover text-gray-100 bg-purple-500
+                    rounded-lg p-3 absolute bottom-[5%] right-28"
+                    type="submit"
+                >Graph</button>
+                <button
+                    name="solve-submit"
                     className="my-focus my-hover text-gray-100 bg-green-500
                     rounded-lg p-3 absolute bottom-[5%] right-8"
                     type="submit"

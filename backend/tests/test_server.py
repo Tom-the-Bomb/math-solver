@@ -29,3 +29,12 @@ async def test_post_solve() -> None:
             'constants': {'a': 0.1, 'b': 0.2},
         }
     )
+
+async def test_post_graph() -> None:
+    client = app.test_client()
+    response = await client.post('/graph', json={
+        'equation': 'x',
+    })
+
+    assert response.status_code == 200
+    assert isinstance(await response.get_data(), bytes)
