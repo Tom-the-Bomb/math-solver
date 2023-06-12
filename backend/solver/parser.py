@@ -11,7 +11,7 @@ from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
 from sympy.logic.boolalg import BooleanAtom
 from sympy import (
-    E, I, pi, GoldenRatio, oo,
+    N, E, I, pi, GoldenRatio, oo,
     functions as func_mod,
     NumberSymbol,
 )
@@ -75,6 +75,9 @@ class Parser:
     ) -> None:
         self.is_parsing_function = is_parsing_function
         self.functions = {
+            'eval': N,
+            'rad': lambda x: x * (pi / 180),
+            'deg': lambda x: x * (180 / pi),
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
@@ -142,7 +145,7 @@ class Parser:
     @staticmethod
     @pg.production('equation : IDENT PIPE interval')
     @pg.production('equation : interval')
-    def domain_interval(_, p: list[Interval]) -> Interval:
+    def domain_compound_interval(_, p: list[Interval]) -> Interval:
         if len(p) == 1:
             return p[0]
         else:
@@ -189,7 +192,7 @@ class Parser:
     @staticmethod
     @pg.production('group : group group', precedence='IMPL_MUL')
     @pg.production('root : group group', precedence='IMPL_MUL')
-    def implicit_mul(_, p: list[Ast], /) -> Mul:
+    def custom_root(_, p: list[Ast], /) -> Mul:
         return Mul(p[0], p[1])
 
     @staticmethod

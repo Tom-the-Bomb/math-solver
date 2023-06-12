@@ -87,7 +87,7 @@ async def post_graph(data: SolveSchema) -> Response | tuple[Error, int]:
             )
             return solver.graph()
         except Exception as e:
-            return Error(error=str(e))
+            return Error(error=str(e)), 500
     result = await to_thread(do_blocking, data)
     if isinstance(result, BytesIO):
         result = await send_file(result, mimetype='image/png')

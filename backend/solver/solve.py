@@ -15,9 +15,9 @@ from sympy import (
     oo,
     Reals,
     pprint,
-    Interval,
     Symbol,
     Derivative,
+    Interval, Range, Set,
     latex as s_latex,
     diff, factor, expand, simplify,
     maximum, minimum,
@@ -34,7 +34,7 @@ from .ast import Ast, CompoundInterval, DefinedFunction, BooleanResult, Equation
 from .exceptions import *
 
 if TYPE_CHECKING:
-    from sympy import Set, Number
+    from sympy import Number
     from matplotlib.text import Text
 
 class BooleanComp:
@@ -98,7 +98,7 @@ class Solver:
                 else:
                     try:
                         parsed = Parser().parse(domain).eval()
-                        if not isinstance(parsed, Interval):
+                        if not isinstance(parsed, Set):
                             raise InvalidDomainParsed(domain)
                     except (SyntaxError, ValueError) as e:
                         raise InvalidDomainParsed(domain) from e
@@ -113,7 +113,7 @@ class Solver:
         if self.solve_for is not None:
             self._kwargs['symbol'] = Symbol(self.solve_for)
 
-    def graph(self, /) -> BytesIO:
+    def graph(self, /, *, xrange: tuple[float, float] = (-20, 20)) -> BytesIO:
         fig = plt.figure(1, figsize=(10, 10))
         ax = fig.add_subplot(1, 1, 1)
 
@@ -126,25 +126,42 @@ class Solver:
             variable = None
         def f(x):
             if variable is not None:
-                val = self.lhs_equation.subs(variable, x)
+                val = self.lhs_equation.subs(variable, x) # type: ignore
             else:
                 val = self.lhs_equation
             try:
-                float(val)
+                float(val) # type: ignore
                 return val
             except TypeError:
                 return
         fx = np.vectorize(f)
 
+        x = None
         if self._domain:
-            x1, x2 = float(self._domain.start), float(self._domain.end)
+            try:
+                if isinstance(dom := self._domain, Range):
+                    x1, x2, step = (
+                        float(dom.start), float(dom.stop), float(dom.step) # type: ignore
+                    )
+                    x = np.arange(x1, x2, step)
+                    print(x)
+                else:
+                    x1, x2 = float(self._domain.start), float(self._domain.end) # type: ignore
+            except (TypeError, AttributeError):
+                x1, x2 = xrange
         else:
-            x1, x2 = -20, 20
-        x = np.linspace(x1, x2, 500)
-        ax.spines['bottom'].set_position('zero')
+            x1, x2 = xrange
+        if x is None:
+            if x1 == float('-inf'):
+                x1 = xrange[0]
+            if x2 == float('inf'):
+                x2 = xrange[1]
+            x = np.linspace(x1, x2, 500)
+
+        ax.spines['bottom'].set_position('zero') # type: ignore
         ax.spines['bottom'].set_color(self.GRAPH_AXES_COLOR)
 
-        ax.spines['left'].set_position('zero')
+        ax.spines['left'].set_position('zero') # type: ignore
         ax.spines['left'].set_color(self.GRAPH_AXES_COLOR)
 
         ax.spines['top'].set_visible(False)
@@ -185,7 +202,7 @@ class Solver:
         """Isolates all parts of the equation to the LHS <- (LHS - RHS = 0)"""
         if isinstance(a := self._final_ast, BooleanResult):
             return a.conditional.left.eval() - a.conditional.right.eval()
-        return self.parsed_equation.lhs - self.parsed_equation.rhs
+        return self.parsed_equation.lhs - self.parsed_equation.rhs # type: ignore
 
     @cached_property
     def parsed_equation(self, /) -> Equation | Interval | Functions:
@@ -248,13 +265,13 @@ class Solver:
         if not evaluate_bool and isinstance(a := self._final_ast, BooleanResult):
             return BooleanComp(a.lhs, a.sympy_conditional, a.rhs)
         if not evaluate_bool and isinstance(simplified, BooleanAtom):
-            lhs = simplify(self.parsed_equation.lhs)
-            rhs = simplify(self.parsed_equation.rhs)
-            return BooleanComp(lhs, type(self.parsed_equation), rhs)
+            lhs = simplify(self.parsed_equation.lhs) # type: ignore
+            rhs = simplify(self.parsed_equation.rhs) # type: ignore
+            return BooleanComp(lhs, type(self.parsed_equation), rhs) # type: ignore
         return simplified
 
     @cached_property
-    def max_min(self, /) -> dict[str, Number]:
+    def max_min(self, /) -> dict[str, Expr]:
         """Returns a dictionary containing the maxima and/or the minima, if exists"""
         result = {}
         try:

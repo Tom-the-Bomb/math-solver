@@ -13,6 +13,7 @@ function Latex({content}) {
 }
 
 function Section({latex, name, content}) {
+    const isGraph = name === "Graph";
     const [ copyClicked, setCopyClicked ] = useState(false);
 
     const delay = ms => new Promise(
@@ -28,30 +29,36 @@ function Section({latex, name, content}) {
     }
 
     return (
-        <details open className="[&_img]:open:-rotate-180">
-            <summary className="flex items-center gap-4 border-b-2 py-2 border-rose-500">
+        <details open className="[&_img.arrow-cls]:open:-rotate-180">
+            <summary className={`flex items-center gap-4 border-b-2 ${ isGraph ? "py-2 pt-6" : "py-2"} border-rose-500`}>
                 <h1 className="text-red-100 text-lg my-h1">{name}</h1>
-                <img className="rotate-0 transform text-blue-700 transition-all duration-300" src={process.env.PUBLIC_URL + "/assets/arrow.svg"} alt=">"/>
+                <img
+                    className="arrow-cls rotate-0 transform text-blue-700 transition-all duration-300"
+                    src={process.env.PUBLIC_URL + "/assets/arrow.svg"} alt=">"
+                />
             </summary>
-            <div className="mt-4 scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
-                font-mono p-4 rounded-md bg-rose-800 text-rose-300"
-            >
-                <div>
-                    {content.map((x, i) => latex ? <Latex key={i} content={x}></Latex> : content)}
+            { !isGraph
+                ? <div className="mt-4 scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
+                    font-mono p-4 rounded-md bg-rose-800 text-rose-300"
+                >
+                    <div>
+                        {content.map((x, i) => latex ? <Latex key={i} content={x}></Latex> : content)}
+                    </div>
+                    <div>
+                        { copyClicked
+                            ? <div className="self-center font-md font-sans text-green-400">Copied!</div>
+                            : <button
+                                onClick={() => copyClick(content)}
+                                type="button"
+                                className="rounded-md hover:brightness-[120%] ease-in duration-100 bg-transparent"
+                            >
+                                <img src={process.env.PUBLIC_URL + "/assets/copy.svg"} alt="copy"/>
+                            </button>
+                        }
+                    </div>
                 </div>
-                <div>
-                    { copyClicked
-                        ? <div className="self-center font-md font-sans text-green-400">Copied!</div>
-                        : <button
-                            onClick={() => copyClick(content)}
-                            type="button"
-                            className="rounded-md hover:brightness-[120%] ease-in duration-100 bg-transparent"
-                        >
-                            <img src={process.env.PUBLIC_URL + "/assets/copy.svg"} alt="copy"/>
-                        </button>
-                    }
-                </div>
-            </div>
+                : <img className="rounded-md mt-4 max-h-[100vh]" src={content} alt="graph"/>
+            }
         </details>
     )
 }
@@ -89,7 +96,7 @@ export default function Output({response}) {
         return (
             response.isGraph
                 ? <div>
-                    <img className="rounded-md mt-4 max-h-[100vh]" src={response.content.image} alt="graph"/>
+                    <Section name="Graph" content={response.content.image}></Section>
                 </div>
                 : <div className="flex flex-col gap-2 mt-10">
                     <Section latex={true} name="Domain & Range" content={[domain, range]}></Section>

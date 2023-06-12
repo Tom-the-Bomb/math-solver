@@ -8,6 +8,7 @@ from sympy import (
     latex,
     limit,
     Symbol,
+    Rational,
     Interval as S_Interval,
     Eq as S_Eq,
     Ne as S_Ne,
@@ -95,7 +96,7 @@ class Interval(Ast):
         }[self.brackets](self.a.eval(), self.b.eval())
 
 class CompoundInterval(Interval):
-    NUMBER_SETS: ClassVar[dict[str, Interval]] = {
+    NUMBER_SETS: ClassVar[dict[str, S_Interval]] = {
         'complex': Complexes,
         'real': Reals,
         'rational': Rationals,
@@ -117,7 +118,7 @@ class CompoundInterval(Interval):
 
     def eval(self, /) -> S_Interval:
         if set_ := self.NUMBER_SETS.get(self.number_set.strip().lower()):
-            return set_.intersection(self.interval.eval())
+            return set_.intersection(self.interval.eval()) # type: ignore
         else:
             raise InvalidDomainParsed(self.number_set)
 
@@ -217,7 +218,11 @@ class Mul(BinaryOp):
 
 class Div(BinaryOp):
     def eval(self, /) -> Expr:
-        return self.left.eval() / self.right.eval()
+        left, right = self.left.eval(), self.right.eval()
+        try:
+            return Rational(left, right)
+        except TypeError:
+            return left / right
 
 class Mod(BinaryOp):
     def eval(self, /) -> Expr:
@@ -246,7 +251,7 @@ class Root(Ast):
         self.pow = pow
         self.x = x
 
-    def eval(self, /) -> factorial:
+    def eval(self, /) -> Expr:
         return root(self.x.eval(), self.pow.eval())
 
 class Conditional(BinaryOp, ABC):
