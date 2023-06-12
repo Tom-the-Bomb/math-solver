@@ -6,6 +6,7 @@ from decimal import Decimal
 
 from sympy import (
     Sum,
+    Product as S_Product,
     latex,
     limit,
     Symbol,
@@ -50,6 +51,7 @@ __all__ = (
     'UnaryOp',
     'Conditional',
     'Summation',
+    'Product',
     'Pos',
     'Neg',
     'Add',
@@ -184,6 +186,12 @@ class Summation(Ast):
 
     def eval(self, /) -> Sum:
         return Sum(self.expr.eval(),
+            (self.variable.eval(), self.start.eval(), self.stop.eval())
+        )
+
+class Product(Summation):
+    def eval(self, /) -> S_Product:
+        return S_Product(self.expr.eval(),
             (self.variable.eval(), self.start.eval(), self.stop.eval())
         )
 

@@ -1,6 +1,7 @@
 
 __all__ = (
     'SolverException',
+    'MathTimeout',
     'InvalidDomainParsed',
     'InvalidFunctionArgument',
     'InvalidFunctionCall',
@@ -10,6 +11,10 @@ __all__ = (
 
 class SolverException(Exception):
     ...
+
+class MathTimeout(SolverException):
+    def __init__(self, timeout: float, /) -> None:
+        super().__init__(self, f'Processing exceeded the set time limit of {timeout}s')
 
 class InvalidDomainParsed(SolverException):
     def __init__(self, got: str, /) -> None:

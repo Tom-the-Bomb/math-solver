@@ -78,6 +78,8 @@ class Parser:
             'eval': N,
             'rad': lambda x: x * (pi / 180),
             'deg': lambda x: x * (180 / pi),
+            'ceil': func_mod.ceiling,
+            'round': lambda x, place=None: getattr(x, 'round', lambda _: x)(place),
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
@@ -243,7 +245,8 @@ class Parser:
 
     @staticmethod
     @pg.production('expr : SUM SUBSCRIPT LPAREN var EQ group RPAREN POW group group')
-    def summation(_, p: list[Ast], /) -> Summation:
+    @pg.production('expr : PROD SUBSCRIPT LPAREN var EQ group RPAREN POW group group')
+    def summation_product(_, p: list[Ast], /) -> Summation:
         if isinstance(variables := p[3], map):
             variable = Variable(''.join(x.value for x in variables))
         elif isinstance(constant := p[3], Constant):
@@ -251,7 +254,12 @@ class Parser:
         else:
             assert isinstance(p[3], Variable)
             variable = p[3]
-        return Summation(variable, p[5], p[-2], p[-1])
+
+        assert isinstance(tok := p[0], Token)
+        if tok.gettokentype() == 'SUM':
+            return Summation(variable, p[5], p[-2], p[-1])
+        else:
+            return Product(variable, p[5], p[-2], p[-1])
 
     @pg.production('arguments : expr')
     def arguments_start(_, p: list[Ast]) -> Ast:
