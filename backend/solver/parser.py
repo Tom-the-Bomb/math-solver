@@ -76,6 +76,7 @@ class Parser:
         self.is_parsing_function = is_parsing_function
         self.functions = {
             'eval': N,
+            'rt': func_mod.root,
             'rad': lambda x: x * (pi / 180),
             'deg': lambda x: x * (180 / pi),
             'ceil': func_mod.ceiling,
