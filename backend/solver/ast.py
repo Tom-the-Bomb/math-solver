@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 
 from sympy import (
+    Sum,
     latex,
     limit,
     Symbol,
@@ -48,6 +49,7 @@ __all__ = (
     'BinaryOp',
     'UnaryOp',
     'Conditional',
+    'Summation',
     'Pos',
     'Neg',
     'Add',
@@ -172,6 +174,18 @@ class Limit(Ast):
 
     def eval(self, /) -> Expr:
         return limit(self.expr.eval(), self.target.eval(), self.to.eval())
+
+class Summation(Ast):
+    def __init__(self, variable: Variable, start: Ast, stop: Ast, expr: Ast) -> None:
+        self.variable = variable
+        self.start = start
+        self.stop = stop
+        self.expr = expr
+
+    def eval(self, /) -> Sum:
+        return Sum(self.expr.eval(),
+            (self.variable.eval(), self.start.eval(), self.stop.eval())
+        )
 
 class Variable(Ast):
     def eval(self, /) -> Symbol:

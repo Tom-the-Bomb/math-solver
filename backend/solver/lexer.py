@@ -17,6 +17,7 @@ class LexerGenerator(Generator):
         self.add_groupers()
 
     def add_special(self, /) -> None:
+        self.add('SUM', 'sum')
         self.add('ROOT', 'root')
         self.add('LIMIT', 'lim')
         self.add('ARROW', '->')

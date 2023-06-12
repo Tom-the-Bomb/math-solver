@@ -241,6 +241,18 @@ class Parser:
             'POW': Pow,
         }[p[1].gettokentype()](p[0], p[2])
 
+    @staticmethod
+    @pg.production('expr : SUM SUBSCRIPT LPAREN var EQ group RPAREN POW group group')
+    def summation(_, p: list[Ast], /) -> Summation:
+        if isinstance(variables := p[3], map):
+            variable = Variable(''.join(x.value for x in variables))
+        elif isinstance(constant := p[3], Constant):
+            variable = Variable(constant.ident)
+        else:
+            assert isinstance(p[3], Variable)
+            variable = p[3]
+        return Summation(variable, p[5], p[-2], p[-1])
+
     @pg.production('arguments : expr')
     def arguments_start(_, p: list[Ast]) -> Ast:
         return p[0]
