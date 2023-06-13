@@ -3,11 +3,11 @@ A guide on the syntax of solver inputs<br>
 ### Builtins
 Aside from user defined functions & constants, there are builtin ones too:
 - **Constants**
-	- `e`: Euler's number
-	- `i`: imaginary unit $\sqrt{-1}$
+	- `e`: Euler's number &#8594; $\approx 2.718$
+	- `i`: imaginary unit &#8594; $\sqrt{-1}$
 	- `pi`|`π`: pi &#8594; $\approx 3.14$
 	- `tau`|`τ`: circle constant &#8594; $2\cdot\pi$
-	- `phi`|`φ`|`Φ`: golden ratio
+	- `phi`|`φ`|`Φ`: golden ratio  &#8594; $\frac{1 + \sqrt{5}}{2}$
 	- `inf`|`infty`|`oo`|`∞`: infinity &#8594; $\infty$
 	<br>
 - **Functions**
