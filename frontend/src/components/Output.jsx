@@ -12,7 +12,7 @@ function Latex({content}) {
     return <div ref={container} />
 }
 
-function Section({latex, name, content}) {
+function Section({latex, infoText, name, content}) {
     const isGraph = name === "Graph";
     const [ copyClicked, setCopyClicked ] = useState(false);
 
@@ -28,6 +28,13 @@ function Section({latex, name, content}) {
         setCopyClicked(false);
     }
 
+    const infoTextElement = infoText
+        ? <p className="text-red-300 my-2">
+            <img className="inline-block mr-2" src={process.env.PUBLIC_URL + "/assets/info.svg"} alt="(i)"/>
+            {infoText.map(x => [x, <br/>])}
+        </p>
+        : ""
+
     return (
         <details open className="[&_img.arrow-cls]:open:-rotate-180">
             <summary className={`flex items-center gap-4 border-b-2 ${ isGraph ? "py-2 pt-6" : "py-2"} border-rose-500`}>
@@ -37,6 +44,7 @@ function Section({latex, name, content}) {
                     src={process.env.PUBLIC_URL + "/assets/arrow.svg"} alt=">"
                 />
             </summary>
+            {infoTextElement}
             { !isGraph
                 ? <div className="mt-4 scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
                     font-mono p-4 rounded-md bg-rose-800 text-rose-300"
@@ -58,11 +66,6 @@ function Section({latex, name, content}) {
                     </div>
                 </div>
                 : <div>
-                    <p className="text-red-300 my-2">
-                        <img className="inline-block mr-2" src={process.env.PUBLIC_URL + "/assets/info.svg"} alt="(i)"/>
-                        If the graph is not fully showing or off centered, try entering a domain interval
-                        which will be used as the x-axis range
-                    </p>
                     <img className="rounded-md mt-4 max-h-[100vh]" src={content} alt="graph"/>
                 </div>
             }
@@ -103,11 +106,20 @@ export default function Output({response}) {
         return (
             response.isGraph
                 ? <div>
-                    <Section name="Graph" content={response.content.image}></Section>
+                    <Section name="Graph"
+                        infoText={[`If the graph is not fully showing or off centered, try entering a domain interval
+                        which will be used as the x-axis range`]}
+                        content={response.content.image}>
+                    </Section>
                 </div>
                 : <div className="flex flex-col gap-2 mt-10">
                     <Section latex={true} name="Domain & Range" content={[domain, range]}></Section>
-                    <Section latex={true} name="Simplified" content={simplified}></Section>
+                    <Section latex={true}
+                        name="Simplified"
+                        infoText={["Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;",
+                        "Use eval(...) to evaluate an expression to it's exact value"]}
+                        content={simplified}>
+                    </Section>
                     <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
                     <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
                     <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>

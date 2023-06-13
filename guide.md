@@ -1,7 +1,7 @@
-# Solver Usage Guide<br>
+# Solver Usage Guide
 A guide on the syntax of solver inputs<br>
 <br>
-## Syntax Specifications<br>
+## Syntax Specifications
 This document contains specifications for valid syntax structures and patterns for the solver's parser.<br>
 - ### Equation
 	Parses an equation; used in the primary equation input.<br>
