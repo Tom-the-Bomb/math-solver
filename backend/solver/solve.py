@@ -71,9 +71,21 @@ class Solver:
         functions: Optional[list[str]] = None,
         constants: Optional[Constants] = None,
         parser: Optional[Parser] = None,
+        max_number: Optional[float] = 9e25,
+        max_exponent: Optional[float] = 256,
+        max_factorial: Optional[float] = 1024,
     ) -> None:
         self.raw_equation = equation
         self._final_ast: Optional[Ast] = None
+
+        self._max_number = max_number
+        self._max_exponent = max_exponent
+        self._max_factorial = max_factorial
+        self._parser_limits = dict(
+            max_number=self._max_number,
+            max_exponent=self._max_exponent,
+            max_factorial=self._max_factorial,
+        )
 
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -81,13 +93,18 @@ class Solver:
             parsed_functions = {}
             if functions:
                 for f in functions:
-                    parsed = Parser(constants=constants, is_parsing_function=True).parse(f)
+                    parsed = Parser(
+                        constants=constants,
+                        is_parsing_function=True,
+                        **self._parser_limits,
+                    ).parse(f)
                     if not isinstance(parsed, DefinedFunction):
                         raise NotAFunction(f)
                     parsed_functions.update(parsed.eval())
             self.parser = parser or Parser(
                 constants=constants,
                 functions=parsed_functions,
+                **self._parser_limits,
             )
             self.parsed_equation
 
@@ -97,7 +114,7 @@ class Solver:
                     self._domain = set_
                 else:
                     try:
-                        parsed = Parser().parse(domain).eval()
+                        parsed = Parser(**self._parser_limits).parse(domain).eval()
                         if not isinstance(parsed, Set):
                             raise InvalidDomainParsed(domain)
                     except (SyntaxError, ValueError) as e:

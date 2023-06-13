@@ -75,7 +75,7 @@ This document contains specifications for valid syntax structures and patterns f
                 Syntax: `<group> "^" <group>`<br>
                 > Ex: `x^3` &#8594; $x^3$<br>
 			- **Limit**<br>
-                Syntax: `"lim_(" <group> "&#8594;" <expr> ")" <group>`<br>
+                Syntax: `"lim_(" <group> "->" <expr> ")" <group>`<br>
                 > Ex: `lim_(h->0)(x + h)` &#8594; $\lim\limits_{h\to0} (x+h)$<br>
 			- **Custom root**<br>
                 Syntax: `"root" <group> <group>`<br>

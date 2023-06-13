@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeAlias, ClassVar, TYPE_CHECKING
+from typing import Any, Optional, Callable, TypeAlias, ClassVar, TYPE_CHECKING
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
@@ -200,8 +200,15 @@ class Variable(Ast):
         return Symbol(self.value)
 
 class Number(Ast):
+    def __init__(self, value: str, /, max_value: Optional[float] = None) -> None:
+        super().__init__(value)
+        self.max_value = max_value
+
     def eval(self, /) -> Decimal | int:
-        return int(self.value) if float(self.value).is_integer() else Decimal(self.value)
+        val = int(self.value) if float(self.value).is_integer() else Decimal(self.value)
+        if self.max_value is not None and val > self.max_value:
+            raise NumberLiteralOverflow(val, self.max_value)
+        return val
 
 class BinaryOp(Ast):
     def __init__(self, left: Ast, right: Ast, /):
@@ -251,15 +258,32 @@ class Mod(BinaryOp):
         return self.left.eval() % self.right.eval()
 
 class Pow(BinaryOp):
+    def __init__(self, left: Ast, right: Ast, /, max_value: Optional[float] = None):
+        super().__init__(left, right)
+        self.max_value = max_value
+
     def eval(self, /) -> Expr:
-        return self.left.eval() ** self.right.eval()
+        exp = self.right.eval()
+        try:
+            if self.max_value is not None and exp > self.max_value:
+                raise ExponentOverflow(exp, self.max_value)
+        except TypeError:
+            pass
+        return self.left.eval() ** exp
 
 class Fac(Ast):
-    def __init__(self, x: Ast, /) -> None:
+    def __init__(self, x: Ast, /, max_value: Optional[float] = None) -> None:
+        self.max_value = max_value
         self.x = x
 
     def eval(self, /) -> factorial:
-        return factorial(self.x.eval())
+        val = self.x.eval()
+        try:
+            if self.max_value is not None and val > self.max_value:
+                raise FactorialOverflow(val, self.max_value)
+        except TypeError:
+            pass
+        return factorial(val)
 
 class Abs(Ast):
     def __init__(self, x: Ast, /) -> None:

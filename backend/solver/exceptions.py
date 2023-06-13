@@ -1,6 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 __all__ = (
     'SolverException',
+    'SolverOverflow',
+    'NumberLiteralOverflow',
+    'ExponentOverflow',
+    'FactorialOverflow',
     'MathTimeout',
     'InvalidDomainParsed',
     'InvalidFunctionArgument',
@@ -9,8 +15,27 @@ __all__ = (
     'CantGetProperty',
 )
 
+if TYPE_CHECKING:
+    from decimal import Decimal
+    from .parser import Expr
+
 class SolverException(Exception):
     ...
+
+class SolverOverflow(SolverException, OverflowError):
+    ...
+
+class NumberLiteralOverflow(SolverOverflow):
+    def __init__(self, value: int | Decimal, max_value: float) -> None:
+        super().__init__(f'Number with a value of {value} exceeds the maximum allowed number literal of: {max_value}.')
+
+class ExponentOverflow(SolverOverflow):
+    def __init__(self, value: Expr, max_value: float) -> None:
+        super().__init__(f'An exponent of {value} exceeds the maximum allowed exponent of: {max_value}.')
+
+class FactorialOverflow(SolverOverflow):
+    def __init__(self, value: Expr, max_value: float) -> None:
+        super().__init__(f'An expression with a value of {value} exceeds the maximum allowed factorial of: {max_value}.')
 
 class MathTimeout(SolverException):
     def __init__(self, timeout: float, /) -> None:

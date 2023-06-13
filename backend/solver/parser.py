@@ -73,8 +73,23 @@ class Parser:
         is_parsing_function: Optional[bool] = False,
         functions: Optional[Functions] = None,
         constants: Optional[Constants] = None,
+
+        max_number: Optional[float] = None,
+        max_exponent: Optional[float] = None,
+        max_factorial: Optional[float] = None,
     ) -> None:
         self.is_parsing_function = is_parsing_function
+
+        self._max_number = max_number if max_number is not None else float('inf')
+        self._max_exponent = max_exponent if max_exponent is not None else float('inf')
+        self._max_factorial = max_factorial if max_factorial is not None else float('inf')
+
+        def _round(x: Expr, place: Optional[int] = None) -> Expr:
+            try:
+                return round(x, place)
+            except TypeError:
+                return x
+            
         self.functions = {
             'eval': N,
             'lmit': limit,
@@ -82,7 +97,7 @@ class Parser:
             'rad': lambda x: x * (pi / 180),
             'deg': lambda x: x * (180 / pi),
             'ceil': func_mod.ceiling,
-            'round': lambda x, place=None: getattr(x, 'round', lambda _: x)(place),
+            'round': _round,
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
@@ -165,9 +180,9 @@ class Parser:
     @pg.production('equation : expr LT EQ expr')
     @pg.production('equation : expr GT expr')
     @pg.production('equation : expr GT EQ expr')
-    def equation(_, p: list[Token], /) -> BinaryOp | BooleanResult:
+    def equation(state: Parser, p: list[Token], /) -> BinaryOp | BooleanResult:
         if len(p) == 1 and isinstance(p[0], Ast):
-            conditional = Eq(p[0], Number('0'))
+            conditional = Eq(p[0], Number('0', state._max_number))
         else:
             conditional: Conditional = {
                 ('EQ', None): Eq,
@@ -202,8 +217,8 @@ class Parser:
 
     @staticmethod
     @pg.production('group : NUMBER')
-    def number(_, p: list[Token], /) -> Number:
-        return Number(p[0].getstr())
+    def number(state: Parser, p: list[Token], /) -> Number:
+        return Number(p[0].getstr(), state._max_number)
 
     @staticmethod
     @pg.production('expr : PIPE expr PIPE')
@@ -219,8 +234,8 @@ class Parser:
 
     @staticmethod
     @pg.production('group : group FAC')
-    def factorial(_, p: list[Ast], /) -> Fac:
-        return Fac(p[0])
+    def factorial(state: Parser, p: list[Ast], /) -> Fac:
+        return Fac(p[0], state._max_factorial)
 
     @staticmethod
     @pg.production('group : LIMIT SUBSCRIPT LPAREN group ARROW expr RPAREN group')
@@ -235,16 +250,18 @@ class Parser:
     @pg.production('expr : expr MOD expr')
 
     @pg.production('group : group POW group')
-    def binop(_, p: list[Ast], /) -> BinaryOp:
-        assert isinstance(p[1], Token)
+    def binop(state: Parser, p: list[Ast], /) -> BinaryOp:
+        assert isinstance(tok := p[1], Token)
+        typ = tok.gettokentype()
+        if typ == 'POW':
+            return Pow(p[0], p[2], state._max_exponent)
         return {
             'ADD': Add,
             'SUB': Sub,
             'MUL': Mul,
             'DIV': Div,
             'MOD': Mod,
-            'POW': Pow,
-        }[p[1].gettokentype()](p[0], p[2])
+        }[typ](p[0], p[2])
 
     @staticmethod
     @pg.production('expr : SUM SUBSCRIPT LPAREN var EQ group RPAREN POW group group')
@@ -353,10 +370,10 @@ class Parser:
         def do_op(var: Constant | Variable) -> Constant | Variable | Fac | Pow:
             match len(p):
                 case 2:
-                    return Fac(var)
+                    return Fac(var, state._max_factorial)
                 case 3:
                     assert isinstance(p[2], Ast)
-                    return Pow(var, p[2])
+                    return Pow(var, p[2], state._max_exponent)
                 case _:
                     return var
 
@@ -364,7 +381,7 @@ class Parser:
         if isinstance(variables, map):
             var_amt = len(variables := tuple(variables))
 
-            expr = Number('1')
+            expr = Number('1', state._max_number)
             for i, x in enumerate(variables):
                 x: Variable
                 if (con := state.constants.get(x.value)) is not None:
