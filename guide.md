@@ -1,5 +1,23 @@
 # Solver Usage Guide
 A guide on the syntax of solver inputs<br>
+### Builtins
+Aside from user defined functions & constants, there are builtin ones too:
+- **Constants**
+	- `e`: Euler's number
+	- `i`: imaginary unit $\sqrt{-1}$
+	- `pi`|`π`: pi &#8594; $~ 3.14$
+	- `tau`|`τ`: circle constant &#8594; $2\cdot\pi$
+	- `phi`|`φ`|`Φ`: golden ratio
+	- `inf`|`infty`|`oo`|`∞`: infinity
+	<br>
+- **Functions**
+	- Special
+		- `eval(x)`<br>
+		Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;<br>
+        Use to evaluate an expression for it's exact value
+		- `lmit(expr, target, to)` | `rt(expr, k)`<br>
+		limit and custom-root function aliases for the respective keywords
+
 <br>
 ## Syntax Specifications
 This document contains specifications for valid syntax structures and patterns for the solver's parser.<br>

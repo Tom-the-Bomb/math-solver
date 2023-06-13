@@ -11,6 +11,7 @@ from rply import Token, ParserGenerator
 from rply.lexer import SourcePosition, LexingError
 from sympy.logic.boolalg import BooleanAtom
 from sympy import (
+    limit,
     N, E, I, pi, GoldenRatio, oo,
     functions as func_mod,
     NumberSymbol,
@@ -76,6 +77,7 @@ class Parser:
         self.is_parsing_function = is_parsing_function
         self.functions = {
             'eval': N,
+            'lmit': limit,
             'rt': func_mod.root,
             'rad': lambda x: x * (pi / 180),
             'deg': lambda x: x * (180 / pi),
