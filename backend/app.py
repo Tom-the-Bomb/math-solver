@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     T_SolveResponse: TypeAlias = tuple[SolveResponse, int] | tuple[Error, int]
 
 app = Quart(__name__)
-cors(app, allow_origin="http://localhost:3000")
+cors(app, allow_origin='*')
 RateLimiter(app)
 QuartSchema(app)
 
@@ -76,6 +76,12 @@ def do_graph(data: SolveSchema) -> BytesIO | tuple[Error, int]:
         return solver.graph()
     except Exception as e:
         return Error(error=str(e)), 500
+
+@app.route('/')
+async def root() -> dict[str, str]:
+    return {
+        'content': 'Welcome to the Math Solver API root!'
+    }
 
 @app.route('/solve', methods=['POST'])
 @validate_request(SolveSchema)
