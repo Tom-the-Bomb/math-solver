@@ -1,7 +1,5 @@
 # Math-solver
 
-(WIP) solves the algebra :|
+Solves the math. :)<br><br>
 
-### TODO
-- multivariate equations
-- piecewise equations
+- [Syntax guide](https://github.com/Tom-the-Bomb/math-solver/blob/master/guide.md)

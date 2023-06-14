@@ -83,14 +83,20 @@ def do_graph(data: SolveSchema) -> BytesIO | tuple[Error, int]:
 @validate_response(Error, status_code=500)
 @rate_limit(3, timedelta(seconds=5))
 async def post_solve(data: SolveSchema) -> T_SolveResponse:
-    return await run_threaded(do_solve, data)
+    try:
+        return await run_threaded(do_solve, data)
+    except Exception as e:
+        return Error(error=str(e)), 500
 
 @app.route('/graph', methods=['POST'])
 @validate_request(SolveSchema)
 @validate_response(Error, status_code=500)
 @rate_limit(3, timedelta(seconds=5))
 async def post_graph(data: SolveSchema) -> Response | tuple[Error, int]:
-    result = await run_threaded(do_graph, data)
+    try:
+        result = await run_threaded(do_graph, data)
+    except Exception as e:
+        return Error(error=str(e)), 500
     if isinstance(result, BytesIO):
         result = await send_file(result, mimetype='image/png')
     return result
