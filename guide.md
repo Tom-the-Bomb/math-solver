@@ -1,5 +1,11 @@
 # Solver Usage Guide
 A guide on the syntax of solver inputs<br>
+### Value limits
+For safety purposes
+- Default limits
+	- **Number literal** $< 9\times10^{25}$
+	- **Exponent** $< 256$
+	- **Factorial** $< 1024$<br>
 ### Builtins
 Aside from user defined functions & constants, there are builtin ones too:
 - **Constants**
@@ -17,6 +23,7 @@ Aside from user defined functions & constants, there are builtin ones too:
         Use to evaluate an expression for it's exact value
 		- `lmit(expr, target, to)` | `rt(expr, k)`<br>
 		limit and custom-root function aliases for the respective keywords
+	*... more*
 
 ## Syntax Specifications
 This document contains specifications for valid syntax structures and patterns for the solver's parser.<br>
