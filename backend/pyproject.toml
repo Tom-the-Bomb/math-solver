@@ -9,6 +9,7 @@ dependencies = [
     "quart",
     "sympy",
     "matplotlib",
+    "python-dotenv",
     "quart-cors",
     "quart-schema",
     "quart-rate-limiter",

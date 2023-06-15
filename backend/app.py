@@ -19,6 +19,9 @@ from .solver.exceptions import CantGetProperty
 from .models import *
 from .helpers import run_threaded
 
+from dotenv import load_dotenv
+load_dotenv()
+
 if TYPE_CHECKING:
     T_SolveResponse: TypeAlias = tuple[SolveResponse, int] | tuple[Error, int]
 
