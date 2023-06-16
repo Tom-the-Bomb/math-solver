@@ -1,1 +1,1 @@
-web: hypercorn backend.app:app
+web: hypercorn .:app
