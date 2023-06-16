@@ -1,0 +1,1 @@
+web: py -m hypercorn backend.app:app

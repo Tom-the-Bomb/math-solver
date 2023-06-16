@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TypeAlias, TYPE_CHECKING
 from datetime import timedelta
 from io import BytesIO
+import os
 
 from quart import Quart, Response, send_file
 from quart_cors import cors
@@ -12,6 +13,8 @@ from quart_schema import (
     validate_request,
     validate_response
 )
+
+from typing import Optional
 
 from .solver import Solver
 from .solver.exceptions import CantGetProperty
@@ -107,5 +110,7 @@ async def post_graph(data: SolveSchema) -> Response | tuple[Error, int]:
         result = await send_file(result, mimetype='image/png')
     return result
 
-def run(debug: bool = False) -> None:
-    app.run(debug=debug)
+def run(debug: bool = False, port: Optional[int] = None) -> None:
+    if not port:
+        port = int(os.getenv('PORT', default=5000))
+    app.run(debug=debug, port=port)
