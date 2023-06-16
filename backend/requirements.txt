@@ -1,7 +1,6 @@
 quart-rate-limiter
 quart-schema
 quart-cors
-python-dotenv
 matplotlib
 sympy
 quart
