@@ -83,7 +83,7 @@ def do_graph(data: SolveSchema) -> BytesIO | tuple[Error, int]:
 @app.route('/')
 async def root() -> dict[str, str]:
     return {
-        'content': 'Welcome to the Math Solver API root!'
+        'message': 'Welcome to the Math Solver API root!'
     }
 
 @app.route('/solve', methods=['POST'])
