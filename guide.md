@@ -1,5 +1,28 @@
 # Solver Usage Guide
 A guide on the syntax of solver inputs<br>
+### Examples
+- **Derivative $\frac{d}{dx}{f(x)}$:**<br>
+`lim_(h->0)((f(x + h) - f(x)) / h)`<br>
+&#8594; $\lim\limits_{h\to0}\frac{f(x+h)-f(x)}{h}$ *(providing that `f(x)` is defined)*
+- **Polynomial**<br>
+`5x^4 - 3x^3 + 2x - 1.5`<br>
+&#8594; $5x^4 - 3x^3 + 2x - 1.5 = 0$
+- **Rational**<br>
+`(3x + 2)/(2x^2 - 5)`<br>
+&#8594; $\frac{3x+2}{2x^2-5} = 0$<br>
+- **Sinusoidal**<br>
+`sqrt(2)cos(2pi(x + 1/4)) + 5 = 1`<br>
+&#8594; $\sqrt{2}\cdot\cos{\left(2\pi\left(x + \frac{1}{4}\right)\right)} + 5 = 1$<br>
+- **Logarithmic**<br>
+`2log_5(x) + 5 = 2.5`<br>
+&#8594; $2\log_{5}{x} + 5 = 2.5$<br>
+- **Inequality**<br>
+	- `2x + 1 <= -x - 2` &#8594; $2x + 1 \le -x - 2$<br>
+	- `3.5x - 2 != 5` &#8594; $3.5x - 2 \ne 5$<br>
+- **Euler's identity**<br>
+	`e^i*pi + 1 = 0` &#8594; $e^{i\pi} + 1 = 0$<br>
+	
+See below for specific examples for each **syntax**<br>
 ### Value limits
 For safety purposes
 - Default limits
@@ -110,6 +133,7 @@ This document contains specifications for valid syntax structures and patterns f
 		- `C | R | Q | Z | W | N`<br>
 	- **Compound** `<number_set> "|" <Interval>`<br>
 		- An intersection of the above expressions joined by a `|` operator, representing a combination of the above 2 sets.<br>
+		- Ex: `R | [0, pi]`<br>
 - ### Function
 	Parses a declared function expression<br>
 	- `<func> "=" <expr>`<br>
