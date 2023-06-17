@@ -11,8 +11,8 @@ A guide on the syntax of solver inputs<br>
 `(3x + 2)/(2x^2 - 5)`<br>
 &#8594; $\frac{3x+2}{2x^2-5} = 0$<br>
 - **Sinusoidal**<br>
-`sqrt(2)cos(2pi(x + 1/4)) + 5 = 1`<br>
-&#8594; $\sqrt{2}\cdot\cos{\left(2\pi\left(x + \frac{1}{4}\right)\right)} + 5 = 1$<br>
+`sqrt(2)cos(2pi(theta + 1/4)) + 5 = 1`<br>
+&#8594; $\sqrt{2}\cdot\cos{\left(2\pi\left(\theta + \frac{1}{4}\right)\right)} + 5 = 1$<br>
 - **Logarithmic**<br>
 `2log_5(x) + 5 = 2.5`<br>
 &#8594; $2\log_{5}{x} + 5 = 2.5$<br>
@@ -20,8 +20,8 @@ A guide on the syntax of solver inputs<br>
 	- `2x + 1 <= -x - 2` &#8594; $2x + 1 \le -x - 2$<br>
 	- `3.5x - 2 != 5` &#8594; $3.5x - 2 \ne 5$<br>
 - **Euler's identity**<br>
-	`e^i*pi + 1 = 0` &#8594; $e^{i\pi} + 1 = 0$<br>
-	
+	`e^(i*pi) + 1 = 0` &#8594; $e^{i\pi} + 1 = 0$<br>
+
 See below for specific examples for each **syntax**<br>
 ### Value limits
 For safety purposes

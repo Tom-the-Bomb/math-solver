@@ -149,7 +149,7 @@ function Form({host, setResponse}) {
                 </Textarea>
                 <span className="sr-only">Equation</span>
                 <div className="flex flex-col h-[85%]">
-                    <MathJax className="bg-gray-200 overflow-x-auto scrollbar-gray border-t-2 border-red-900 my-input">
+                    <MathJax dynamic className="bg-gray-200 overflow-x-auto scrollbar-gray border-t-2 border-red-900 my-input">
                         {rendered
                             ? rendered
                             : <div className="text-slate-400 font-math italic">Latex equation</div>
