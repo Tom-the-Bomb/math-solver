@@ -5,6 +5,15 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif&display=swap');
 
+details > summary {
+    list-style: none;
+}
+
+details > summary::marker,
+details > summary::-webkit-details-marker {
+    display: none;
+}
+
 @layer components {
     body {
         @apply bg-rose-900

@@ -4,7 +4,7 @@ import Footer from "./components/Footer";
 import { MathJaxContext } from "better-react-mathjax";
 
 const BACKEND_HOST = !process.env.NODE_ENV || process.env.NODE_ENV.toLowerCase() === 'development'
-    ? "https://localhost:5000"
+    ? "http://localhost:5000"
     : "https://math-solver-api.tomthebomb.dev";
 
 export default function App() {

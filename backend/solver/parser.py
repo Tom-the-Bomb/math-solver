@@ -86,10 +86,10 @@ class Parser:
 
         def _round(x: Expr, place: Optional[int] = None) -> Expr:
             try:
-                return round(x, place)
+                return round(x, place) # type: ignore
             except TypeError:
                 return x
-            
+
         self.functions = {
             'eval': N,
             'lmit': limit,
@@ -320,7 +320,7 @@ class Parser:
         elif len(p) == 4 and isinstance(tok := p[2], Token):
             subscript = {
                 'NUMBER': Parser.number,
-                'IDENT': Parser.variable,
+                'IDENT': lambda s, p: Parser.multi_var(s, [Parser.variable(s, p)]),
             }[tok.gettokentype()](state, [tok])
 
         if (f := state.functions.get(ident)) is not None:
@@ -344,6 +344,7 @@ class Parser:
     @staticmethod
     @pg.production('var : IDENT')
     @pg.production('var : IDENT SUBSCRIPT NUMBER')
+    @pg.production('var : IDENT SUBSCRIPT IDENT')
     def variable(state: Parser, p: list[Token], /) -> Constant | Variable | Iterable[Variable]:
         ident: str = p[0].getstr()
         if len(p) == 3:
@@ -353,13 +354,16 @@ class Parser:
             return Constant(ident, x)
 
         raw = p[0].getstr()
-        if len(ident) == 1 or len(raw) == 1 or ident in state.GREEK_LETTERS:
+        if len(ident) == 1 or raw in state.GREEK_LETTERS:
             var = Variable(ident)
             state.variables.append(var)
             return var
 
         if len(p) == 3:
-            return map(Variable, [*raw[:-1], raw[-1] + f'_{p[-1].getstr()}'])
+            sub: str = p[-1].getstr()
+            if p[-1].gettokentype() == 'NUMBER':
+                return map(Variable, [*raw[:-1], raw[-1] + f'_{sub}'])
+            return map(Variable, [*raw[:-1], raw[-1] + f'_{sub[0]}', *sub[1:]])
         else:
             return map(Variable, ident)
 
