@@ -118,8 +118,7 @@ export default function Output({response}) {
                     <Section latex={true}
                         name="Simplified"
                         infoText={["Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;",
-                        "Use eval(...) to evaluate an expression for it's exact value",
-                        "additionally also refer to the section below"]}
+                        "Use eval(...) to evaluate an expression for it's exact value; additionally also refer to the section below"]}
                         content={simplified}
                     ></Section>
                     <Section latex={true} name="Exact value" content={[response.content.evaluated]}></Section>
@@ -127,7 +126,7 @@ export default function Output({response}) {
                         name="Solution"
                         content={[response.content.latex_solution]}
                         infoText={["A set containing values to satisfy the (algebraic) equation",
-                        "this can also be explicitly specified in the \"isolate for\" input"]}
+                        "the variable can also be explicitly specified in the \"isolate for\" input"]}
                     ></Section>
                     <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
                     <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>
