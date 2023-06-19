@@ -8,7 +8,7 @@ function Textarea({onChange, name, required, placeholder, height}) {
         <textarea
             onChange={onChange}
             className={
-                `scrollbar-gray block ${height} w-full resize-none font-serif overflow-y-auto
+                `rounded-none scrollbar-gray block ${height} w-full resize-none font-serif overflow-y-auto
                 my-input text-lg border-t-2 border-red-900`
             }
             placeholder={placeholder}

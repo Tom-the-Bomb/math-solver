@@ -22,6 +22,7 @@ class SolveResponse:
     factored: str
     expanded: str
     equation: str
+    evaluated: str
     simplified_equation: str
     latex_solution: str
     raw_solution: str

@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 
 import numpy as np
 from sympy import (
-    oo,
+    N, oo,
     Reals,
     pprint,
     Symbol,
@@ -96,7 +96,7 @@ class Solver:
                     parsed = Parser(
                         constants=constants,
                         is_parsing_function=True,
-                        **self._parser_limits,
+                        **self._parser_limits, # type: ignore
                     ).parse(f)
                     if not isinstance(parsed, DefinedFunction):
                         raise NotAFunction(f)
@@ -104,7 +104,7 @@ class Solver:
             self.parser = parser or Parser(
                 constants=constants,
                 functions=parsed_functions,
-                **self._parser_limits,
+                **self._parser_limits, # type: ignore
             )
             self.parsed_equation
 
@@ -114,7 +114,7 @@ class Solver:
                     self._domain = set_
                 else:
                     try:
-                        parsed = Parser(**self._parser_limits).parse(domain).eval()
+                        parsed = Parser(**self._parser_limits).parse(domain).eval() # type: ignore
                         if not isinstance(parsed, Set):
                             raise InvalidDomainParsed(domain)
                     except (SyntaxError, ValueError) as e:
@@ -264,6 +264,10 @@ class Solver:
         with redirect_stdout(buf):
             pprint(self.solution, use_unicode=False)
         return buf.getvalue()
+
+    @cached_property
+    def evaluated_equation(self, /) -> Expr:
+        return N(self.lhs_equation)
 
     @cached_property
     def factored(self, /) -> Expr:

@@ -25,24 +25,10 @@ from .helpers import run_threaded
 if TYPE_CHECKING:
     T_SolveResponse: TypeAlias = tuple[SolveResponse, int] | tuple[Error, int]
 
-app = Quart(
-    __name__,
-    static_folder='../frontend/build',
-)
+app = Quart(__name__)
 cors(app, allow_origin='*')
 RateLimiter(app)
 QuartSchema(app)
-
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-@validate_response(Error, status_code=500)
-async def serve(path: str) -> Response | tuple[Error, int]:
-    if app.static_folder and path and os.path.exists(f'{app.static_folder}/{path}'):
-        return await send_from_directory(app.static_folder, path)
-    elif app.static_folder:
-        return await send_from_directory(app.static_folder, 'index.html')
-    else:
-        return Error(error='Woops, something went wrong'), 500
 
 def do_solve(data: SolveSchema) -> T_SolveResponse:
     try:
@@ -70,6 +56,7 @@ def do_solve(data: SolveSchema) -> T_SolveResponse:
             range=range,
             factored=Solver.to_latex(solver.factored),
             expanded=Solver.to_latex(solver.expanded),
+            evaluated=Solver.to_latex(solver.evaluated_equation),
             equation=Solver.to_latex(solver.parsed_equation),
             derivative=Solver.to_latex(solver.derivative),
             simplified_equation=Solver.to_latex(solver.simplify()),
@@ -94,7 +81,7 @@ def do_graph(data: SolveSchema) -> BytesIO | tuple[Error, int]:
     except Exception as e:
         return Error(error=str(e)), 500
 
-#@app.route('/')
+@app.route('/')
 async def root() -> dict[str, str]:
     return {
         'message': 'Welcome to the Math Solver API root!'

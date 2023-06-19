@@ -12,7 +12,7 @@ function Latex({content}) {
     return <div ref={container} />
 }
 
-function Section({latex, infoText, name, content}) {
+function Section({children, isOpen=true, latex, infoText, name, content}) {
     const isGraph = name === "Graph";
     const [ copyClicked, setCopyClicked ] = useState(false);
 
@@ -36,7 +36,7 @@ function Section({latex, infoText, name, content}) {
         : ""
 
     return (
-        <details open className="[&_img.arrow-cls]:open:-rotate-180">
+        <details open={isOpen} className="[&_img.arrow-cls]:open:-rotate-180">
             <summary className={`flex items-center gap-4 border-b-2 ${ isGraph ? "py-2 pt-6" : "py-2"} border-rose-500`}>
                 <h1 className="text-red-100 text-lg my-h1">{name}</h1>
                 <img
@@ -49,7 +49,7 @@ function Section({latex, infoText, name, content}) {
                 ? <div className="mt-4 scrollbar-latex overflow-x-auto flex flex-row flex-wrap gap-y-4 justify-between
                     font-mono p-4 rounded-md bg-rose-800 text-rose-300"
                 >
-                    <div>
+                    <div className="flex flex-col gap-2">
                         {content.map((x, i) => latex ? <Latex key={i} content={x}></Latex> : content)}
                     </div>
                     <div>
@@ -69,6 +69,7 @@ function Section({latex, infoText, name, content}) {
                     <img className="rounded-md mt-4 max-h-[100vh]" src={content} alt="graph"/>
                 </div>
             }
+            {children}
         </details>
     )
 }
@@ -117,10 +118,17 @@ export default function Output({response}) {
                     <Section latex={true}
                         name="Simplified"
                         infoText={["Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;",
-                        "Use eval(...) to evaluate an expression for it's exact value"]}
-                        content={simplified}>
-                    </Section>
-                    <Section latex={true} name="Solution" content={[response.content.latex_solution]}></Section>
+                        "Use eval(...) to evaluate an expression for it's exact value",
+                        "additionally also refer to the section below"]}
+                        content={simplified}
+                    ></Section>
+                    <Section latex={true} name="Exact value" content={[response.content.evaluated]}></Section>
+                    <Section latex={true}
+                        name="Solution"
+                        content={[response.content.latex_solution]}
+                        infoText={["A set containing values to satisfy the (algebraic) equation",
+                        "this can also be explicitly specified in the \"isolate for\" input"]}
+                    ></Section>
                     <Section latex={true} name="Derivative" content={[response.content.derivative]}></Section>
                     <Section latex={true} name="Maxima & Minima" content={[max, min]}></Section>
                     <Section latex={true} name="Factored & Expanded" content={[factored, expanded]}></Section>
