@@ -118,10 +118,10 @@ export default function Output({response}) {
                     <Section latex={true}
                         name="Simplified"
                         infoText={["Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;",
-                        "Use eval(...) to evaluate an expression for it's exact value; additionally also refer to the section below"]}
+                        "Use eval(...) to evaluate an expression for it's evaluated numerical value; additionally also refer to the section below"]}
                         content={simplified}
                     ></Section>
-                    <Section latex={true} name="Exact value" content={[response.content.evaluated]}></Section>
+                    <Section latex={true} name="Evaluated Value" content={[response.content.evaluated]}></Section>
                     <Section latex={true}
                         name="Solution"
                         content={[response.content.latex_solution]}

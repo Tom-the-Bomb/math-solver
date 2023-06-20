@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 __all__ = (
     'SolverException',
     'SolverOverflow',
+    'InvalidFunctionCombination',
     'NumberLiteralOverflow',
     'ExponentOverflow',
     'FactorialOverflow',
@@ -23,6 +24,9 @@ class SolverException(Exception):
     ...
 
 class SolverOverflow(SolverException, OverflowError):
+    ...
+
+class InvalidFunctionCombination(SolverException):
     ...
 
 class NumberLiteralOverflow(SolverOverflow):
@@ -50,8 +54,8 @@ class InvalidFunctionArgument(SolverException):
         super().__init__('Invalid function argument recieved')
 
 class InvalidFunctionCall(SolverException):
-    def __init__(self, ident: str, /) -> None:
-        super().__init__(f'Undefined function: {ident}')
+    def __init__(self, /, *idents: str) -> None:
+        super().__init__(f"Undefined function{'s' if len(idents) > 1 else ''}: '{', '.join(idents)}'")
 
 class NotAFunction(SolverException):
     def __init__(self, provided: str, /) -> None:

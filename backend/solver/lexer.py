@@ -35,6 +35,7 @@ class LexerGenerator(Generator):
         self.add('IDENT', r'[a-zA-Z]+')
 
     def add_operations(self) -> None:
+        self.add('AT', '@')
         self.add('PIPE', r'\|')
         self.add('COMMA', ',')
         self.add('ADD', r'\+')

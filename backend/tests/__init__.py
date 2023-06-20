@@ -1,3 +1,3 @@
 from solver import Solver
 
-print(Solver('log_xy(f)').parsed_equation)
+print(Solver('(f + g)(x)', functions=['f(x) = x', 'g(x) = 2']).parsed_equation)

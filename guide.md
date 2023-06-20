@@ -43,7 +43,7 @@ Aside from user defined functions & constants, there are builtin ones too:
 	- Special
 		- `eval(x)`<br>
 		Expressions are often not pre-evaluated for algebraic equations to maintain accuracy;<br>
-        Use to evaluate an expression for it's exact value
+        Use to evaluate an expression for it's evaluated numerical value
 		- `lmit(expr, target, to)` | `rt(expr, k)`<br>
 		limit and custom-root function aliases for the respective keywords
 	*... more*

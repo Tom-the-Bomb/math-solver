@@ -201,6 +201,51 @@ class Parser:
     @pg.production('expr : group')
     def group(_, p: list[Ast], /) -> Ast:
         return p[0]
+    
+    @staticmethod
+    @pg.production('group : LPAREN IDENT ADD IDENT RPAREN call', precedence='IMPL_MUL')
+    @pg.production('group : LPAREN IDENT SUB IDENT RPAREN call', precedence='IMPL_MUL')
+    @pg.production('group : LPAREN IDENT MUL IDENT RPAREN call', precedence='IMPL_MUL')
+    @pg.production('group : LPAREN IDENT DIV IDENT RPAREN call', precedence='IMPL_MUL')
+    @pg.production('group : LPAREN IDENT AT IDENT RPAREN call', precedence='IMPL_MUL')
+    def fx_combinations(state: Parser, p: list[Token]) -> Function | Add | Sub | Mul | Div:
+        f1 = state.functions.get(raw_f1 := p[1].getstr())
+        f2 = state.functions.get(raw_f2 := p[3].getstr())
+        call: list[Ast] = p[-1] if isinstance(p[-1], list) else [p[-1]] # type: ignore
+        typ = p[2].gettokentype()
+
+        if f1 is not None and f2 is not None:
+            match typ:
+                case 'ADD' | 'SUB' | 'MUL' | 'DIV':
+                    return {
+                        'ADD': Add,
+                        'SUB': Sub,
+                        'MUL': Mul,
+                        'DIV': Div,
+                    }[typ](Function(f1, *call), Function(f2, *call))
+                case _:
+                    return Function(f2, Function(f1, *call))
+        elif typ == 'AT':
+            raise InvalidFunctionCombination(
+                'The `@` operator cannot be used outside of function combination syntax\n'
+                f"and one of the provided functions seem to be undefined: '{raw_f1}' or '{raw_f2}'"
+            )
+        elif len(call) > 1:
+            raise InvalidFunctionCall(raw_f1, raw_f2)
+        else:
+            var1 = Parser.multi_var(
+                state,
+                [Parser.variable(state, [raw_f1])],
+            )
+            var2 = Parser.multi_var(
+                state,
+                [Parser.variable(state, [raw_f2])],
+            )
+            return Mul(
+                Parser.binop(
+                    state, [var1, p[2], var2], # type: ignore
+                ), call[0],
+            )
 
     @staticmethod
     @pg.production('group : ROOT root', precedence='IMPL_MUL')
