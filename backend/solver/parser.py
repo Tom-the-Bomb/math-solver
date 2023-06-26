@@ -60,7 +60,7 @@ class Parser:
         precedence=[
             ('right', ['UNOP']),
             ('left', ['ADD', 'SUB']),
-            ('left', ['MUL', 'DIV', 'MOD']),
+            ('left', ['MUL', 'DIV', 'MOD', 'AT']),
             ('left', ['IMPL_MUL']),
             ('right', ['POW']),
             ('left', ['FAC']),
@@ -201,51 +201,31 @@ class Parser:
     @pg.production('expr : group')
     def group(_, p: list[Ast], /) -> Ast:
         return p[0]
-    
-    @staticmethod
-    @pg.production('group : LPAREN IDENT ADD IDENT RPAREN call', precedence='IMPL_MUL')
-    @pg.production('group : LPAREN IDENT SUB IDENT RPAREN call', precedence='IMPL_MUL')
-    @pg.production('group : LPAREN IDENT MUL IDENT RPAREN call', precedence='IMPL_MUL')
-    @pg.production('group : LPAREN IDENT DIV IDENT RPAREN call', precedence='IMPL_MUL')
-    @pg.production('group : LPAREN IDENT AT IDENT RPAREN call', precedence='IMPL_MUL')
-    def fx_combinations(state: Parser, p: list[Token]) -> Function | Add | Sub | Mul | Div:
-        f1 = state.functions.get(raw_f1 := p[1].getstr())
-        f2 = state.functions.get(raw_f2 := p[3].getstr())
-        call: list[Ast] = p[-1] if isinstance(p[-1], list) else [p[-1]] # type: ignore
-        typ = p[2].gettokentype()
 
-        if f1 is not None and f2 is not None:
-            match typ:
-                case 'ADD' | 'SUB' | 'MUL' | 'DIV':
-                    return {
-                        'ADD': Add,
-                        'SUB': Sub,
-                        'MUL': Mul,
-                        'DIV': Div,
-                    }[typ](Function(f1, *call), Function(f2, *call))
-                case _:
-                    return Function(f2, Function(f1, *call))
-        elif typ == 'AT':
-            raise InvalidFunctionCombination(
-                'The `@` operator cannot be used outside of function combination syntax\n'
-                f"and one of the provided functions seem to be undefined: '{raw_f1}' or '{raw_f2}'"
-            )
-        elif len(call) > 1:
-            raise InvalidFunctionCall(raw_f1, raw_f2)
+    @staticmethod
+    @pg.production('group : combination call', precedence='IMPL_MUL')
+    def fx_combinations(state: Parser, p: list[Ast]) -> Function | BinaryOp:
+        call: list[Ast] = p[-1] if isinstance(p[-1], list) else [p[-1]] # type: ignore
+        assert isinstance(t := p[0], BinaryOp)
+
+        if isinstance(t.left, Variable) and isinstance(t.right, Variable):
+            left = t.left.value
+            right = t.right.value
+        elif isinstance(t.left, Constant) and isinstance(t.right, Constant):
+            left = t.left.ident
+            right = t.right.ident
         else:
-            var1 = Parser.multi_var(
-                state,
-                [Parser.variable(state, [raw_f1])],
-            )
-            var2 = Parser.multi_var(
-                state,
-                [Parser.variable(state, [raw_f2])],
-            )
-            return Mul(
-                Parser.binop(
-                    state, [var1, p[2], var2], # type: ignore
-                ), call[0],
-            )
+            return Mul(t, call[0])
+        f1 = state.functions.get(left)
+        f2 = state.functions.get(right)
+        if f1 is not None and f2 is not None:
+            if isinstance(t, At):
+                return Function(f2, Function(f1, *call))
+            return t.__class__(Function(f1, *call), Function(f2, *call))
+        elif len(call) > 1:
+            raise InvalidFunctionCall(left, right)
+        else:
+            return Mul(t, call[0])
 
     @staticmethod
     @pg.production('group : ROOT root', precedence='IMPL_MUL')
@@ -277,6 +257,14 @@ class Parser:
     def paren(_, p: list[Ast], /) -> Ast:
         return p[1] if len(p) == 3 else p[0]
 
+    @pg.production('combination : LPAREN binop RPAREN')
+    def combination(_, p: list[Ast], /) -> Ast:
+        return p[1]
+
+    @pg.production('group : combination')
+    def combination_group(_, p: list[Ast], /) -> Ast:
+        return p[0]
+
     @staticmethod
     @pg.production('group : group FAC')
     def factorial(state: Parser, p: list[Ast], /) -> Fac:
@@ -288,11 +276,17 @@ class Parser:
         return Limit(p[3], p[5], p[-1])
 
     @staticmethod
-    @pg.production('expr : expr ADD expr')
-    @pg.production('expr : expr SUB expr')
-    @pg.production('expr : expr MUL expr')
-    @pg.production('expr : expr DIV expr')
-    @pg.production('expr : expr MOD expr')
+    @pg.production('expr : binop')
+    def binop_expr(_, p: list[Ast]) -> Ast:
+        return p[0]
+
+    @staticmethod
+    @pg.production('binop : expr ADD expr')
+    @pg.production('binop : expr SUB expr')
+    @pg.production('binop : expr MUL expr')
+    @pg.production('binop : expr DIV expr')
+    @pg.production('binop : expr MOD expr')
+    @pg.production('binop : expr AT expr')
 
     @pg.production('group : group POW group')
     def binop(state: Parser, p: list[Ast], /) -> BinaryOp:
@@ -306,6 +300,7 @@ class Parser:
             'MUL': Mul,
             'DIV': Div,
             'MOD': Mod,
+            'AT': At,
         }[typ](p[0], p[2])
 
     @staticmethod

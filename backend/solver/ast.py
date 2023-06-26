@@ -59,6 +59,7 @@ __all__ = (
     'Mul',
     'Div',
     'Mod',
+    'At',
     'Pow',
     'Fac',
     'Abs',
@@ -256,6 +257,15 @@ class Div(BinaryOp):
 class Mod(BinaryOp):
     def eval(self, /) -> Expr:
         return self.left.eval() % self.right.eval()
+
+class At(BinaryOp):
+    def eval(self, /) -> Expr:
+        left = self.left.eval()
+        right = self.right.eval()
+        try:
+            return left @ right
+        except TypeError as e:
+            raise AtOperatorError(f"Invalid operands for '@' operator: '{left}' and '{right}'") from e
 
 class Pow(BinaryOp):
     def __init__(self, left: Ast, right: Ast, /, max_value: Optional[float] = None):

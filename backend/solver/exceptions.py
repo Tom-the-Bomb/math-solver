@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 __all__ = (
     'SolverException',
     'SolverOverflow',
-    'InvalidFunctionCombination',
+    'AtOperatorError',
     'NumberLiteralOverflow',
     'ExponentOverflow',
     'FactorialOverflow',
@@ -26,7 +26,7 @@ class SolverException(Exception):
 class SolverOverflow(SolverException, OverflowError):
     ...
 
-class InvalidFunctionCombination(SolverException):
+class AtOperatorError(SolverException):
     ...
 
 class NumberLiteralOverflow(SolverOverflow):
