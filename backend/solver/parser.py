@@ -208,19 +208,16 @@ class Parser:
         call: list[Ast] = p[-1] if isinstance(p[-1], list) else [p[-1]] # type: ignore
         assert isinstance(t := p[0], BinaryOp)
 
-        if isinstance(t.left, Variable) and isinstance(t.right, Variable):
-            left = t.left.value
-            right = t.right.value
-        elif isinstance(t.left, Constant) and isinstance(t.right, Constant):
-            left = t.left.ident
-            right = t.right.ident
+        if isinstance(t.left, (Constant, Variable)) and isinstance(t.right, (Constant, Variable)):
+            left = t.left.value if isinstance(t.left, Variable) else t.left.ident
+            right = t.right.value if isinstance(t.right, Variable) else t.right.ident
         else:
             return Mul(t, call[0])
         f1 = state.functions.get(left)
         f2 = state.functions.get(right)
         if f1 is not None and f2 is not None:
             if isinstance(t, At):
-                return Function(f2, Function(f1, *call))
+                return Function(f1, Function(f2, *call))
             return t.__class__(Function(f1, *call), Function(f2, *call))
         elif len(call) > 1:
             raise InvalidFunctionCall(left, right)
