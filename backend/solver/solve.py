@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, ClassVar, Final, Any
+from typing import TYPE_CHECKING, Optional, ClassVar, Any
 from functools import cache, cached_property
 from contextlib import redirect_stdout
 from io import StringIO, BytesIO
@@ -34,7 +34,6 @@ from .ast import Ast, CompoundInterval, DefinedFunction, BooleanResult, Equation
 from .exceptions import *
 
 if TYPE_CHECKING:
-    from sympy import Number
     from matplotlib.text import Text
 
 class BooleanComp:
