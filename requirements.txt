@@ -1,0 +1,7 @@
+quart-rate-limiter
+quart-schema
+quart-cors
+matplotlib
+sympy
+quart
+rply
