@@ -98,6 +98,24 @@ class Parser:
             'deg': lambda x: x * (180 / pi),
             'ceil': func_mod.ceiling,
             'round': _round,
+
+            # trig inverses
+            'arcsin': func_mod.asin,
+            'arccos': func_mod.acos,
+            'arctan': func_mod.atan,
+            # reciprocal trig inverses
+            'arccsc': func_mod.acsc,
+            'arcsec': func_mod.asec,
+            'arccot': func_mod.acot,
+            # hyperbolic trig inverses
+            'arcsinh': func_mod.asinh,
+            'arccosh': func_mod.acosh,
+            'arctanh': func_mod.atanh,
+            # hyperbolic reciprocal trig inverses
+            'arccsch': func_mod.acsch,
+            'arcsech': func_mod.asech,
+            'arccoth': func_mod.acoth,
+
             **{_to_camel_case(k): v for k, v in inspect.getmembers(func_mod)},
             **(functions or {})
         }
